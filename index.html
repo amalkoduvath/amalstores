@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FreshCart | Dark Neon Grocery — Store Express Pickup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <!-- Supabase Cloud DB Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="store.js"></script>
+  <style>
+    :root {
+      --bg:        #030914;
+      --card:      #081225;
+      --card2:     #0a1628;
+      --border:    rgba(0,216,246,0.12);
+      --border-hi: rgba(0,216,246,0.45);
+      --cyan:      #00D8F6;
+      --cyan-dim:  #005F73;
+      --sidebar-w: 220px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: #c8d8e8;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #050d1a; }
+    ::-webkit-scrollbar-thumb { background: #0f2540; border-radius: 4px; }
+
+    /* ── App shell ── */
+    #app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      grid-template-rows: 56px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Top Bar ── */
+    #topbar {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      background: #040c1a;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      position: sticky;
+      top: 0;
+      z-index: 60;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      grid-column: 1;
+      grid-row: 2;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+      padding: 14px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* ── Main content ── */
+    #main-content {
+      grid-column: 2;
+      grid-row: 2;
+      overflow-y: auto;
+      height: calc(100vh - 56px);
+    }
+
+    /* ── Content + bag grid ── */
+    #content-bag {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 0;
+      min-height: 100%;
+    }
+
+    #content-area { padding: 20px 20px 140px; }
+    #bag-panel    { border-left: 1px solid var(--border); background: var(--card); position: sticky; top: 0; height: calc(100vh - 56px); overflow-y: auto; }
+
+    /* ── Brand logo ── */
+    .brand-logo {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .brand-logo span { color: var(--cyan); }
+
+    /* ── Search bar ── */
+    #search-wrap {
+      flex: 1;
+      max-width: 520px;
+      position: relative;
+    }
+    #search-wrap input {
+      width: 100%;
+      background: #0b1929;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #e2edf8;
+      font-size: 13px;
+      padding: 7px 36px 7px 36px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    #search-wrap input:focus {
+      border-color: var(--cyan-dim);
+      box-shadow: 0 0 0 3px rgba(0,216,246,.08);
+    }
+    #search-wrap .s-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#4a7c99; pointer-events:none; }
+    #search-wrap .s-kbd  { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-family:'JetBrains Mono',monospace; font-size:10px; color:#2d5470; background:#0d1f35; padding:1px 5px; border-radius:4px; border:1px solid #1a3050; }
+
+    /* ── Location pill ── */
+    .location-pill {
+      display: flex; align-items: center; gap-6px;
+      background: #0b1929; border:1px solid var(--border);
+      border-radius: 9px; padding: 5px 10px;
+      font-size: 12px; color: #8fbcd4; white-space: nowrap;
+      cursor: pointer; user-select: none;
+    }
+
+    /* ── Sidebar nav ── */
+    .nav-section-label {
+      font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: #2d5470; padding: 10px 16px 4px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; font-size: 13px; font-weight: 500;
+      color: #6a95b0; cursor: pointer; border-radius: 0;
+      transition: background .15s, color .15s;
+      position: relative; user-select: none;
+    }
+    .nav-item:hover { background: rgba(0,216,246,.04); color: #a8d4e8; }
+    .nav-item.active {
+      color: var(--cyan);
+      background: rgba(0,216,246,.07);
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--cyan);
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+    /* ── Free delivery card ── */
+    .free-delivery-card {
+      margin: 12px 12px 0;
+      background: linear-gradient(135deg, #041825, #061e30);
+      border: 1px solid rgba(0,216,246,.2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+
+    /* ── Hero banner ── */
+    .hero {
+      background: linear-gradient(110deg, #040e1f 0%, #061624 50%, #030e1c 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 240px; height: 240px;
+      background: radial-gradient(circle, rgba(0,216,246,.12) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; bottom: -40px; left: 20%;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(0,95,115,.15) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* ── Section heading ── */
+    .section-heading {
+      font-size: 13px; font-weight: 700; color: #d0e8f4;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+    }
+    .section-heading::before {
+      content: '';
+      width: 3px; height: 14px;
+      background: var(--cyan);
+      border-radius: 2px;
+    }
+
+    /* ── Category grid ── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .cat-tile {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 10px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s, transform .2s;
+      user-select: none;
+    }
+    .cat-tile:hover { border-color: var(--border-hi); background: #0c1e38; transform: translateY(-2px); }
+    .cat-tile.active { border-color: var(--cyan); background: rgba(0,216,246,.06); }
+    .cat-tile .tile-icon { font-size: 22px; margin-bottom: 7px; }
+    .cat-tile .tile-label { font-size: 10px; font-weight: 600; color: #7ab0cc; line-height: 1.3; }
+    .cat-tile.active .tile-label { color: var(--cyan); }
+
+    /* ── Product card ── */
+    .product-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color .2s, transform .25s, box-shadow .25s;
+      display: flex; flex-direction: column;
+    }
+    .product-card:hover {
+      border-color: rgba(0,216,246,.35);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px -8px rgba(0,0,0,.6), 0 0 18px -4px rgba(0,216,246,.12);
+    }
+    .product-card .card-img {
+      width: 100%; height: 140px; object-fit: cover;
+      background: #091422;
+      display: block;
+    }
+    .card-body { padding: 12px 13px 13px; flex: 1; display: flex; flex-direction: column; }
+    .card-name { font-size: 12.5px; font-weight: 600; color: #d8eaf6; line-height: 1.4; margin-bottom: 3px; }
+    .card-unit { font-size: 10.5px; color: #3e6882; font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .card-price { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #e8f4ff; }
+    .card-price .mrp { font-size: 10px; text-decoration: line-through; color: #2d5470; margin-left: 4px; font-weight: 400; }
+
+    /* Discount badge */
+    .discount-badge {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(255,80,80,.85); color: #fff;
+      font-size: 9px; font-weight: 700; padding: 2px 6px;
+      border-radius: 20px; letter-spacing: .03em;
+    }
+    .stock-badge {
+      position: absolute; top: 8px; right: 8px;
+      font-size: 9px; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px;
+    }
+    .stock-in  { background: rgba(0,200,110,.15); color: #0dc875; border: 1px solid rgba(0,200,110,.3); }
+    .stock-low { background: rgba(255,170,0,.12); color: #ffc040; border: 1px solid rgba(255,170,0,.3); }
+    .stock-out { background: rgba(255,60,60,.1);  color: #ff6060; border: 1px solid rgba(255,60,60,.25); }
+
+    /* ── Buttons ── */
+    .btn-cyan {
+      background: var(--cyan);
+      color: #020c18;
+      font-weight: 700;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: opacity .18s, transform .15s, box-shadow .18s;
+    }
+    .btn-cyan:hover { opacity: .88; box-shadow: 0 0 20px rgba(0,216,246,.35); transform: translateY(-1px); }
+    .btn-cyan:active { transform: scale(.97); }
+
+    .btn-outline-cyan {
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid rgba(0,216,246,.5);
+      font-weight: 600;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background .15s, box-shadow .18s;
+    }
+    .btn-outline-cyan:hover { background: rgba(0,216,246,.07); box-shadow: 0 0 14px rgba(0,216,246,.2); }
+
+    .btn-emerald {
+      background: #00c46a;
+      color: #020c18;
+      font-weight: 700;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: opacity .18s, transform .15s;
+    }
+    .btn-emerald:hover { opacity: .85; transform: translateY(-1px); }
+
+    /* ── qty controls ── */
+    .qty-ctrl {
+      display: flex; align-items: center; gap: 2px;
+      background: #0b1929; border: 1px solid rgba(0,216,246,.35);
+      border-radius: 9px; padding: 2px 4px;
+    }
+    .qty-btn {
+      width: 24px; height: 24px;
+      background: #112236; color: var(--cyan);
+      border: none; border-radius: 7px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .qty-btn:hover { background: #1a3550; }
+    .qty-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e8f4ff; padding: 0 5px; }
+
+    /* ── Bag panel ── */
+    .bag-header { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+    .bag-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid rgba(0,216,246,.05); }
+    .bag-item img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; background: #091422; border: 1px solid #0f2540; flex-shrink: 0; }
+    .bag-footer { padding: 14px 14px 18px; border-top: 1px solid var(--border); }
+    .bag-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 7px; }
+    .bag-row .label { color: #4a7c99; }
+    .bag-row .val   { color: #c0daf0; font-weight: 600; }
+    .bag-row.total-row { padding-top: 10px; border-top: 1px solid var(--border); margin-top: 6px; }
+    .bag-row.total-row .label { color: #a0c8e0; font-weight: 700; font-size: 13px; }
+    .bag-row.total-row .val   { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
+
+    /* ── Products grid ── */
+    #productGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+      gap: 14px;
+    }
+
+    /* ── OTP digit inputs ── */
+    .otp-digit {
+      width: 52px; height: 58px; text-align: center;
+      font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+      background: #050f1e; border: 2px solid rgba(0,216,246,.25);
+      color: var(--cyan); border-radius: 12px; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .otp-digit:focus { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,216,246,.4); }
+
+    /* ── Modal backdrop ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(2,8,18,.88);
+      backdrop-filter: blur(8px);
+      z-index: 80;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--card);
+      border: 1px solid rgba(0,216,246,.35);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%; max-width: 440px;
+      max-height: 92vh; overflow-y: auto;
+      box-shadow: 0 20px 60px -10px rgba(0,0,0,.9), 0 0 40px rgba(0,216,246,.1);
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 100;
+      background: #0a1e35; border: 1px solid rgba(0,216,246,.35);
+      border-radius: 12px; padding: 11px 18px;
+      font-size: 12.5px; color: #c8e4f4;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 28px -6px rgba(0,0,0,.7);
+      transform: translateY(18px); opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Bottom tracker bar — now anchored inside scroll, never overlapping cards ── */
+    #trackerBar {
+      display: none;
+      margin: 0 0 14px 0;
+      background: linear-gradient(90deg, #04111f, #061828);
+      border: 1px solid rgba(0,216,246,.4);
+      border-radius: 13px; padding: 10px 14px;
+      align-items: center; justify-content: space-between; gap: 12px;
+      box-shadow: 0 0 22px -4px rgba(0,216,246,.15);
+    }
+    #trackerBar.show { display: flex; }
+
+    /* ── Notification bell ── */
+    .notif-bell {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: #0b1929; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative;
+      color: #4a7c99; font-size: 15px;
+      transition: border-color .2s, color .2s;
+    }
+    .notif-bell:hover { border-color: var(--border-hi); color: #8abede; }
+    .notif-dot {
+      position: absolute; top: 5px; right: 5px;
+      width: 7px; height: 7px; background: var(--cyan);
+      border-radius: 50%; border: 1.5px solid var(--card);
+    }
+
+    /* ── Mobile overlay sidebar ── */
+    #sidebar-overlay { display: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1100px) {
+      #app-shell { grid-template-columns: 1fr; }
+      #sidebar {
+        display: none;
+        position: fixed; left: 0; top: 56px; bottom: 0;
+        width: 260px; z-index: 70;
+        box-shadow: 8px 0 40px rgba(0,0,0,.7);
+      }
+      #sidebar.mobile-open { display: flex; }
+      #sidebar-overlay.active {
+        display: block !important;
+        position: fixed; inset: 0; top: 56px;
+        background: rgba(0,0,0,.65); z-index: 69;
+      }
+      #main-content { grid-column: 1; }
+      #content-bag { grid-template-columns: 1fr; }
+      #bag-panel { display: none !important; }
+      #content-area { padding: 16px 14px 40px; }
+    }
+    @media (max-width: 768px) {
+      .cat-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      #productGrid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .hero { padding: 20px 18px; }
+      .hero h1 { font-size: 20px !important; }
+    }
+    @media (max-width: 420px) {
+      .cat-grid { grid-template-columns: repeat(2, 1fr); }
+      #productGrid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════ -->
+<div id="app-shell">
+
+  <!-- ── TOP BAR ──────────────────────────────────────── -->
+  <header id="topbar">
+    <!-- Hamburger (mobile) -->
+    <button id="hamBtn" onclick="toggleSidebar()" class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-[#4a7c99] hover:text-white" style="background:#0b1929;border:1px solid #0f2540;font-size:18px;">☰</button>
+
+    <!-- Brand -->
+    <a href="index.html" class="brand-logo flex-shrink-0">Fresh<span>Cart</span></a>
+
+    <!-- Store Express Pickup status badge -->
+    <div class="location-pill flex items-center gap-1.5 ml-2 hidden sm:flex">
+      <span style="width:7px;height:7px;background:#0dc875;border-radius:50%;display:inline-block;animation:ping 1.4s infinite;"></span>
+      <span style="font-size:12px;font-weight:700;color:#0dc875;">Store Express Pickup</span>
+      <span style="font-size:11px;color:#4a7c99;">· Counter Pickup in ~15 Mins</span>
+    </div>
+
+    <!-- Search -->
+    <div id="search-wrap" class="flex-1" style="margin: 0 10px;">
+      <span class="s-icon">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </span>
+      <input type="text" id="searchInput" placeholder="Search products… (press / to focus)"
+             oninput="onSearch(this.value)" autocomplete="off"/>
+      <span class="s-kbd hidden sm:block">/</span>
+    </div>
+
+    <!-- Notification Bell -->
+    <div class="notif-bell">
+      🔔
+      <span class="notif-dot"></span>
+    </div>
+
+    <!-- Active order badge -->
+    <button id="trackBtn" onclick="openPassModal()"
+            class="hidden items-center gap-2 text-xs font-mono font-bold px-3 py-1.5 rounded-lg"
+            style="background:rgba(0,200,110,.1);color:#0dc875;border:1px solid rgba(0,200,110,.3);box-shadow:0 0 14px rgba(0,200,110,.2);">
+      <span style="width:7px;height:7px;background:#0dc875;border-radius:50%;display:inline-block;animation:ping 1s infinite;"></span>
+      <span id="trackBtnText">Active Pass</span>
+    </button>
+
+    <!-- My Bag button (visible on mobile / when bag panel hidden) -->
+    <button onclick="openMobileBag()"
+            class="btn-cyan flex items-center gap-2 px-3 py-1.5 text-sm"
+            style="white-space:nowrap;">
+      🛒
+      <span id="cartBadge" style="font-family:'JetBrains Mono',monospace;font-weight:800;">0</span>
+      <span class="hidden sm:inline" style="font-size:11px;font-weight:600;">My Bag</span>
+      <span id="cartHeaderTotal" class="hidden sm:inline" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;">₹0</span>
+    </button>
+  </header>
+
+  <!-- ── SIDEBAR ────────────────────────────────────────── -->
+  <nav id="sidebar">
+    <div class="nav-section-label">Navigation</div>
+
+    <div class="nav-item active" onclick="filterCat('All');setNavActive(this)">
+      <span class="nav-icon">🏠</span> Home
+    </div>
+
+    <div class="nav-section-label" style="margin-top:6px;">Categories</div>
+
+    <div class="nav-item" onclick="filterCat('Hydroponics');setNavActive(this)">
+      <span class="nav-icon">🌱</span> Fruits &amp; Vegetables
+    </div>
+    <div class="nav-item" onclick="filterCat('Orbital Dairy');setNavActive(this)">
+      <span class="nav-icon">🥛</span> Dairy &amp; Eggs
+    </div>
+    <div class="nav-item" onclick="filterCat('Zero-G Pantry');setNavActive(this)">
+      <span class="nav-icon">🌾</span> Grains &amp; Staples
+    </div>
+    <div class="nav-item" onclick="filterCat('Snacks &amp; Rations');setNavActive(this)">
+      <span class="nav-icon">🍿</span> Snacks &amp; Branded
+    </div>
+    <div class="nav-item" onclick="filterCat('Beverages &amp; Elixirs');setNavActive(this)">
+      <span class="nav-icon">⚡</span> Beverages
+    </div>
+    <div class="nav-item" onclick="filterCat('Synthesized Proteins');setNavActive(this)">
+      <span class="nav-icon">🧬</span> Personal Care
+    </div>
+    <div class="nav-item" onclick="filterCat('All');setNavActive(this)">
+      <span class="nav-icon">🏡</span> Household
+    </div>
+    <div class="nav-item" onclick="filterCat('All');setNavActive(this)">
+      <span class="nav-icon">🔥</span> Special Offers
+    </div>
+
+  </nav>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;"></div>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────── -->
+  <div id="main-content">
+    <div id="content-bag">
+
+      <!-- ── CONTENT AREA ── -->
+      <div id="content-area">
+
+        <!-- ACTIVE ORDER TRACKER (in-flow banner, never overlaps cards) -->
+        <div id="trackerBar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:10px;background:rgba(0,216,246,.1);border:1px solid rgba(0,216,246,.3);display:flex;align-items:center;justify-content:center;font-size:15px;">🏬</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:12px;font-weight:700;color:#c8e4f4;">Active Pickup Pass:</span>
+                <span id="trackerCode" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--cyan);font-size:12px;">PK-000</span>
+                <span id="trackerPin" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#f59e0b;font-weight:700;">PIN: 000000</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                <span id="trackerDot" style="width:7px;height:7px;background:var(--cyan);border-radius:50%;display:inline-block;animation:ping 1s infinite;"></span>
+                <span id="trackerStatus" style="font-size:11px;color:#4a7c99;font-family:'JetBrains Mono',monospace;">Order Received in Store</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <button onclick="openPassModal()" class="btn-cyan" style="padding:6px 14px;font-size:12px;border-radius:8px;">View Pickup Pass</button>
+            <button onclick="this.closest('#trackerBar').classList.remove('show')" style="background:none;border:none;color:#2d5470;font-size:16px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+
+        <!-- HERO BANNER -->
+        <div class="hero">
+          <div style="position:relative;z-index:1;">
+            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,216,246,.08);border:1px solid rgba(0,216,246,.2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--cyan);font-weight:600;margin-bottom:12px;">
+              <span style="width:6px;height:6px;background:var(--cyan);border-radius:50%;animation:ping 1.4s infinite;display:inline-block;"></span>
+              Store Express Pickup · Come &amp; Collect · Counter Pickup in ~15 Mins
+            </div>
+            <h1 style="font-size:26px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:8px;letter-spacing:-.4px;">
+              Fresh &amp; Healthy<br>
+              <span style="color:var(--cyan);">Order Online, Collect at Store</span>
+            </h1>
+            <p style="font-size:13px;color:#4a7c99;margin-bottom:18px;max-width:400px;">
+              Hydroponics, proteins, dairy &amp; pantry staples. Place your order online and show your 6-digit Pickup Pass at the counter.
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button onclick="filterCat('All')" class="btn-cyan" style="padding:9px 22px;font-size:13px;">Shop Now →</button>
+              <button onclick="openPassModal()" class="btn-outline-cyan" style="padding:9px 18px;font-size:13px;">View Pickup Pass</button>
+            </div>
+
+            <!-- Feature chips -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+              <span style="font-size:10.5px;padding:4px 10px;background:#0b1929;border:1px solid #0f2540;border-radius:20px;color:#4a7c99;">⚡ 15-Min Assembly</span>
+              <span style="font-size:10.5px;padding:4px 10px;background:#0b1929;border:1px solid #0f2540;border-radius:20px;color:#4a7c99;">🔐 6-Digit Pickup PIN</span>
+              <span style="font-size:10.5px;padding:4px 10px;background:#0b1929;border:1px solid #0f2540;border-radius:20px;color:#4a7c99;">📱 Phone OTP Verified</span>
+              <span style="font-size:10.5px;padding:4px 10px;background:#0b1929;border:1px solid #0f2540;border-radius:20px;color:#4a7c99;">🆓 ₹0 In-Store Collection</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CATEGORY GRID -->
+        <div class="section-heading">Category Quick Links</div>
+        <div class="cat-grid" id="catGrid">
+          <!-- JS rendered -->
+        </div>
+
+        <!-- TODAY'S BEST OFFERS -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="section-heading" style="margin-bottom:0;">Today's Best Offers</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="filterLabel" style="font-size:12px;color:#2d5470;"></span>
+            <span id="searchCount" style="font-size:11px;color:#2d5470;font-family:'JetBrains Mono',monospace;"></span>
+          </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="productGrid"></div>
+
+        <!-- Empty state -->
+        <div id="emptyState" style="display:none;text-align:center;padding:50px 20px;">
+          <div style="font-size:44px;margin-bottom:10px;">🛸</div>
+          <div style="font-size:15px;font-weight:700;color:#c0daf0;margin-bottom:6px;">No items found</div>
+          <div style="font-size:12px;color:#2d5470;margin-bottom:16px;">Try another keyword or reset the category filter.</div>
+          <button onclick="clearSearch();filterCat('All')" class="btn-cyan" style="padding:8px 20px;font-size:13px;">Show All Items</button>
+        </div>
+
+      </div><!-- /content-area -->
+
+      <!-- ── YOUR BAG PANEL ── -->
+      <div id="bag-panel">
+        <div class="bag-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:18px;">🛒</span>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#d8eaf6;">Your Bag</div>
+                <div id="cartSubtitle" style="font-size:11px;color:#2d5470;font-family:'JetBrains Mono',monospace;">0 items</div>
+              </div>
+            </div>
+            <span style="font-size:10px;color:var(--cyan);background:rgba(0,216,246,.08);border:1px solid rgba(0,216,246,.2);padding:2px 8px;border-radius:20px;font-weight:700;">LIVE</span>
+          </div>
+        </div>
+
+        <!-- Bag Items -->
+        <div id="cartItems" style="flex:1;overflow-y:auto;"></div>
+
+        <!-- Empty bag -->
+        <div id="cartEmpty" style="padding:40px 20px;text-align:center;">
+          <div style="font-size:36px;margin-bottom:10px;">🛍️</div>
+          <div style="font-size:13px;font-weight:600;color:#4a7c99;margin-bottom:5px;">Your bag is empty</div>
+          <div style="font-size:11px;color:#2d5470;">Add items from the catalog to get started.</div>
+        </div>
+
+        <!-- Bag footer -->
+        <div id="cartFooter" style="display:none;">
+          <div class="bag-footer">
+            <div class="bag-row">
+              <span class="label">Items Subtotal</span>
+              <span id="cartSubtotalLabel" class="val">₹0</span>
+            </div>
+            <div class="bag-row">
+              <span class="label">In-Store Collection</span>
+              <span class="val" style="color:#0dc875;font-weight:700;">FREE (₹0)</span>
+            </div>
+            <div class="bag-row total-row">
+              <span class="label">Total Amount</span>
+              <span id="cartTotalLabel" class="val">₹0</span>
+            </div>
+            <div style="font-size:10px;color:#4a7c99;margin-top:6px;display:flex;align-items:center;gap:4px;">
+              <span>⚡</span>
+              <span>Express Counter Collection · Free In-Store Pickup</span>
+            </div>
+            <button onclick="openCheckoutOnboarding()"
+                    class="btn-cyan w-full" style="width:100%;padding:11px;font-size:13px;margin-top:12px;border-radius:10px;letter-spacing:.02em;">
+              Proceed to Pickup Pass →
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-bag -->
+  </div><!-- /main-content -->
+
+</div><!-- /app-shell -->
+
+
+<!-- ════════════════════════════════════════════════════
+     MOBILE BAG DRAWER
+════════════════════════════════════════════════════ -->
+<div id="bagDrawerBackdrop" onclick="closeMobileBag()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:75;"></div>
+<div id="bagDrawer"
+     style="position:fixed;top:0;right:0;bottom:0;width:min(320px,100%);background:var(--card);border-left:1px solid var(--border);z-index:76;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;">
+  <div class="bag-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">🛒</span>
+      <span style="font-size:14px;font-weight:700;color:#d8eaf6;">Your Bag</span>
+    </div>
+    <button onclick="closeMobileBag()" style="background:none;border:none;color:#4a7c99;font-size:18px;cursor:pointer;">✕</button>
+  </div>
+  <div id="mBagItems" style="flex:1;overflow-y:auto;"></div>
+  <div id="mBagEmpty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;">
+    <div style="font-size:36px;margin-bottom:8px;">🛍️</div>
+    <div style="font-size:13px;color:#4a7c99;">Your bag is empty</div>
+  </div>
+  <div id="mBagFooter" style="display:none;border-top:1px solid var(--border);">
+    <div class="bag-footer">
+      <div class="bag-row"><span class="label">Items Subtotal</span><span id="mBagSubtotal" class="val">₹0</span></div>
+      <div class="bag-row"><span class="label">In-Store Collection</span><span class="val" style="color:#0dc875;font-weight:700;">FREE (₹0)</span></div>
+      <div class="bag-row total-row"><span class="label">Total Amount</span><span id="mBagTotal" class="val">₹0</span></div>
+      <button onclick="closeMobileBag();openCheckoutOnboarding()"
+              class="btn-cyan" style="width:100%;padding:11px;font-size:13px;margin-top:12px;border-radius:10px;">
+        Proceed to Pickup Pass →
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     CUSTOMER VERIFICATION MODAL (PHONE OTP + PICKUP PASS)
+════════════════════════════════════════════════════ -->
+<div id="onboardingModal" class="modal-backdrop">
+  <div class="modal-box">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(0,216,246,.12);border:1px solid rgba(0,216,246,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🏬</div>
+        <div>
+          <div id="onboardingStepTitle" style="font-size:15px;font-weight:700;color:#d8eaf6;">Customer Verification</div>
+          <div style="font-size:11px;color:#2d5470;font-family:'JetBrains Mono',monospace;">Step 1 of 2 · Customer &amp; Pickup Window</div>
+        </div>
+      </div>
+      <button onclick="closeCheckoutOnboarding()" style="background:none;border:none;color:#2d5470;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="step1FormWrapper">
+      <form id="onboardingForm" onsubmit="handleRequestOtp(event)" style="display:flex;flex-direction:column;gap:13px;">
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#2d5470;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Full Name *</label>
+          <input type="text" id="custFullName" required placeholder="Aarav Sharma"
+                 style="width:100%;background:#050f1e;border:1px solid #0f2540;border-radius:10px;padding:9px 13px;font-size:13px;color:#d8eaf6;outline:none;transition:border-color .2s;"
+                 onfocus="this.style.borderColor='rgba(0,216,246,.5)'" onblur="this.style.borderColor='#0f2540'"/>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#2d5470;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">10-Digit Mobile Number *</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--cyan);">+91</span>
+            <input type="tel" id="custPhoneNum" required placeholder="9876543210" maxlength="10"
+                   style="width:100%;background:#050f1e;border:1px solid #0f2540;border-radius:10px;padding:9px 13px 9px 44px;font-size:13px;color:#d8eaf6;outline:none;font-family:'JetBrains Mono',monospace;transition:border-color .2s;"
+                   onfocus="this.style.borderColor='rgba(0,216,246,.5)'" onblur="this.style.borderColor='#0f2540'"/>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#2d5470;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Pickup Time Slot *</label>
+          <select id="custPickupSlot" required
+                  style="width:100%;background:#050f1e;border:1px solid #0f2540;border-radius:10px;padding:9px 13px;font-size:13px;color:#d8eaf6;outline:none;transition:border-color .2s;"
+                  onfocus="this.style.borderColor='rgba(0,216,246,.5)'" onblur="this.style.borderColor='#0f2540'">
+            <option value="⚡ Instant Express (15-20 Mins)">⚡ Instant Express (15-20 Mins)</option>
+            <option value="🕒 Today: 4:00 PM – 5:00 PM">🕒 Today: 4:00 PM – 5:00 PM</option>
+            <option value="🕕 Today: 6:00 PM – 7:00 PM">🕕 Today: 6:00 PM – 7:00 PM</option>
+            <option value="🌙 Today: 8:00 PM – 9:00 PM">🌙 Today: 8:00 PM – 9:00 PM</option>
+            <option value="☀️ Tomorrow: 9:00 AM – 10:00 AM">☀️ Tomorrow: 9:00 AM – 10:00 AM</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#2d5470;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Pickup Station Location *</label>
+          <select id="custPickupStation" required
+                  style="width:100%;background:#050f1e;border:1px solid #0f2540;border-radius:10px;padding:9px 13px;font-size:13px;color:#d8eaf6;outline:none;transition:border-color .2s;"
+                  onfocus="this.style.borderColor='rgba(0,216,246,.5)'" onblur="this.style.borderColor='#0f2540'">
+            <option value="Station 01 — Store Counter Bay A (Indiranagar)">📍 Station 01 — Store Counter Bay A (Indiranagar)</option>
+            <option value="Station 02 — Express Pickup Vault Bay B (Main Road)">📍 Station 02 — Express Pickup Vault Bay B (Main Road)</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#2d5470;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Payment Mode at Counter *</label>
+          <select id="custPaymentMethod" required
+                  style="width:100%;background:#050f1e;border:1px solid #0f2540;border-radius:10px;padding:9px 13px;font-size:13px;color:#d8eaf6;outline:none;transition:border-color .2s;"
+                  onfocus="this.style.borderColor='rgba(0,216,246,.5)'" onblur="this.style.borderColor='#0f2540'">
+            <option value="UPI / QR Scan at Counter">⚡ UPI / QR Scan at Counter</option>
+            <option value="Cash at Counter Pickup">💵 Cash at Counter Pickup</option>
+            <option value="Card (POS at Counter)">💳 Card (POS at Counter)</option>
+          </select>
+        </div>
+
+        <!-- Total summary -->
+        <div style="background:#050f1e;border:1px solid #0f2540;border-radius:10px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:#2d5470;">Total Due at Store Counter</div>
+            <div style="font-size:10px;color:#0dc875;margin-top:2px;">Free Express In-Store Collection (₹0 Fee)</div>
+          </div>
+          <div id="onboardingTotalBadge" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:var(--cyan);">₹0</div>
+        </div>
+
+        <button type="submit" class="btn-cyan" style="padding:12px;font-size:13px;border-radius:10px;width:100%;letter-spacing:.03em;">
+          SEND OTP →
+        </button>
+      </form>
+    </div>
+
+    <!-- STEP 2: OTP -->
+    <div id="step2OtpWrapper" style="display:none;">
+
+      <!-- SMS simulation banner -->
+      <div style="background:rgba(0,216,246,.06);border:1px solid rgba(0,216,246,.25);border-radius:12px;padding:13px;display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;">
+        <span style="font-size:20px;">📱</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#c8e8f8;margin-bottom:3px;">SMS Gateway Simulation</div>
+          <div style="font-size:12px;color:#4a7c99;">Your FreshCart pickup verification OTP is
+            <strong id="generatedOtpDisplay" style="font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:14px;background:#050f1e;padding:2px 6px;border-radius:5px;border:1px solid rgba(0,216,246,.3);letter-spacing:.12em;">----</strong>
+          </div>
+          <button type="button" onclick="autoFillOtp()" style="margin-top:7px;font-size:11px;color:#0dc875;font-weight:700;background:none;border:none;cursor:pointer;padding:0;">⚡ Tap to auto-fill OTP</button>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-bottom:8px;">
+        <p style="font-size:12px;color:#4a7c99;">Enter the 4-digit code sent to <span id="otpTargetPhone" style="color:var(--cyan);font-family:'JetBrains Mono',monospace;font-weight:700;"></span></p>
+      </div>
+
+      <!-- OTP Boxes -->
+      <div style="display:flex;justify-content:center;gap:10px;margin:20px 0;">
+        <input type="text" id="otpBox1" maxlength="1" class="otp-digit" autofocus oninput="handleOtpInput(1,this)" onkeydown="handleOtpKey(1,event)"/>
+        <input type="text" id="otpBox2" maxlength="1" class="otp-digit" oninput="handleOtpInput(2,this)" onkeydown="handleOtpKey(2,event)"/>
+        <input type="text" id="otpBox3" maxlength="1" class="otp-digit" oninput="handleOtpInput(3,this)" onkeydown="handleOtpKey(3,event)"/>
+        <input type="text" id="otpBox4" maxlength="1" class="otp-digit" oninput="handleOtpInput(4,this)" onkeydown="handleOtpKey(4,event)"/>
+      </div>
+
+      <div id="otpErrorMsg" style="display:none;color:#ff6060;font-size:12px;text-align:center;margin-bottom:10px;font-family:'JetBrains Mono',monospace;">
+        Invalid code. Please enter the 4 digits shown above.
+      </div>
+
+      <button type="button" onclick="verifyOtpAndPlaceOrder()" class="btn-emerald" style="width:100%;padding:12px;font-size:13px;border-radius:10px;letter-spacing:.03em;margin-bottom:14px;">
+        ✓ VERIFY &amp; GENERATE PICKUP PASS
+      </button>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <button type="button" onclick="backToStep1()" style="font-size:12px;color:#2d5470;background:none;border:none;cursor:pointer;">← Edit Info</button>
+        <button type="button" id="resendOtpBtn" onclick="regenerateOtp()" style="font-size:12px;font-family:'JetBrains Mono',monospace;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;color:#2d5470;">
+          Resend Code <span id="resendCountdown" style="color:var(--cyan);font-weight:700;">(60s)</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     6-DIGIT IN-STORE PICKUP PASS & QR CODE MODAL
+════════════════════════════════════════════════════ -->
+<div id="passBg" class="modal-backdrop">
+  <div class="modal-box" style="text-align:center;">
+
+    <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,var(--cyan),#00c46a);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 24px rgba(0,216,246,.4);">⚡</div>
+
+    <div style="display:inline-block;background:rgba(0,216,246,.08);border:1px solid rgba(0,216,246,.25);border-radius:20px;padding:3px 12px;font-size:10px;font-weight:700;color:var(--cyan);letter-spacing:.08em;margin-bottom:8px;">IN-STORE PICKUP PASS</div>
+
+    <h3 style="font-size:20px;font-weight:800;color:#e8f4ff;margin-bottom:4px;">Pickup Pass Confirmed! 🎉</h3>
+    <p style="font-size:11px;color:#4a7c99;margin-bottom:16px;">Present this 6-digit PIN or QR code to staff at the counter</p>
+
+    <!-- 6-Digit In-Store Pickup Pass Code Banner -->
+    <div style="background:linear-gradient(110deg,#040e1f,#061624);border:2px solid var(--cyan);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 0 28px rgba(0,216,246,.2);">
+      <div style="font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">6-DIGIT IN-STORE PICKUP PASS CODE</div>
+      <div id="passPinCode" style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:900;color:#fff;letter-spacing:.18em;">------</div>
+      <div style="font-size:10px;color:#38bdf8;margin-top:4px;font-weight:600;">Show to Counter Agent for Express Handover</div>
+    </div>
+
+    <!-- QR Code Container for Counter Scanning -->
+    <div style="background:#050f1e;border:1px solid #0f2540;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;">
+      <div id="qrCodeContainer" style="background:#000;border-radius:10px;padding:8px;border:1px solid rgba(0,216,246,.3);"></div>
+      <span style="font-size:9px;color:#4a7c99;margin-top:8px;font-family:'JetBrains Mono',monospace;">Scan at Bay Counter Terminal</span>
+    </div>
+
+    <!-- Pass Details -->
+    <div style="background:#050f1e;border:1px solid #0f2540;border-radius:12px;padding:13px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;margin-bottom:14px;display:flex;flex-direction:column;gap:7px;">
+      <div style="display:flex;justify-content:space-between;padding-bottom:7px;border-bottom:1px solid #0f2540;">
+        <span style="color:#2d5470;">Pickup Token</span>
+        <span id="passCode" style="color:var(--cyan);font-weight:700;">PK-000</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#2d5470;">Order Reference</span>
+        <span id="passOrderId" style="color:#7ab0cc;">ORD-000000</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#2d5470;">Customer</span>
+        <span id="passCustName" style="color:#d8eaf6;font-weight:600;">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#2d5470;">Pickup Window</span>
+        <span id="passSlot" style="color:var(--cyan);">Instant Express</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#2d5470;">Collection Bay</span>
+        <span id="passStation" style="color:#7ab0cc;max-width:210px;text-align:right;">Counter Bay A</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:7px;border-top:1px solid #0f2540;">
+        <span style="color:#2d5470;font-weight:700;">Total Payable</span>
+        <span id="passTotal" style="color:#0dc875;font-weight:700;font-size:13px;">₹0</span>
+      </div>
+      <!-- Live Status -->
+      <div style="padding-top:7px;border-top:1px solid #0f2540;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:9px;color:#2d5470;text-transform:uppercase;">Vault Status</span>
+          <span id="passStatus" style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,216,246,.12);color:var(--cyan);border:1px solid rgba(0,216,246,.3);">Ready for Collection</span>
+        </div>
+        <p id="passStatusDesc" style="font-size:10px;color:#4a7c99;margin:0;">Order verified. Walk up to counter with this 6-digit PIN.</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:10px;">
+      <button onclick="copyPinToClipboard()" class="btn-outline-cyan" style="flex:1;padding:10px;font-size:12px;border-radius:10px;">📋 Copy 6-Digit PIN</button>
+      <button onclick="closePassModal()" class="btn-cyan" style="flex:1;padding:10px;font-size:12px;border-radius:10px;">Done ✓</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- ── TOAST ──────────────────────────────────────── -->
+<div id="toast">
+  <span style="width:8px;height:8px;background:var(--cyan);border-radius:50%;flex-shrink:0;"></span>
+  <span id="toastMsg">Ready</span>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     STOREFRONT APPLICATION LOGIC
+════════════════════════════════════════════════════ -->
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+let products = [];
+let cart = {}; // { id: qty }
+let activeCat = 'All';
+let searchQ = '';
+let activeOrderId = null;
+let currentPendingOrderData = null;
+let activeOtpCode = '';
+
+const CATS = [
+  'Hydroponics',
+  'Synthesized Proteins',
+  'Orbital Dairy',
+  'Zero-G Pantry',
+  'Beverages & Elixirs',
+  'Snacks & Rations'
+];
+
+const CAT_ICONS = {
+  'Hydroponics': '🌱',
+  'Synthesized Proteins': '🧬',
+  'Orbital Dairy': '🥛',
+  'Zero-G Pantry': '🌾',
+  'Beverages & Elixirs': '⚡',
+  'Snacks & Rations': '🍿',
+  'Fruits': '🍎', 'Vegetables': '🥦', 'Staples': '🌾',
+  'Beverages': '☕', 'Snacks': '🍿'
+};
+
+const CAT_LABELS = {
+  'Hydroponics': 'Fruits &\nVegetables',
+  'Synthesized Proteins': 'Personal\nCare',
+  'Orbital Dairy': 'Dairy\n& Eggs',
+  'Zero-G Pantry': 'Grains\n& Staples',
+  'Beverages & Elixirs': 'Beverages',
+  'Snacks & Rations': 'Snacks\n& Branded'
+};
+
+const IMG_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect fill='%23050f1e' width='400' height='200'/%3E%3Ctext fill='%232d5470' font-size='40' text-anchor='middle' x='200' y='115'%3E📦%3C/text%3E%3C/svg%3E";
+
+// ── Boot ──────────────────────────────────────────────────────────────
+function init() {
+  try { cart = JSON.parse(localStorage.getItem('aura_cart_v5') || '{}'); } catch { cart = {}; }
+  activeOrderId = localStorage.getItem('aura_active_order_v5');
+
+
+  loadProducts();
+  renderCategoryTiles();
+  updateCartUI();
+  checkActiveOrder();
+
+  if (window.AURA_DB) {
+    AURA_DB.onSync(ev => {
+      if (ev.type === 'PRODUCTS_UPDATED') { loadProducts(); showToast('Store catalog updated live!'); }
+      if (ev.type === 'ORDERS_UPDATED')   { checkActiveOrder(); }
+    });
+  }
+
+  window.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+      e.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+  });
+}
+
+function loadProducts() {
+  products = window.AURA_DB ? AURA_DB.getProducts() : [];
+  renderCategoryTiles();
+  renderGrid();
+  syncCartProductRefs();
+  updateCartUI();
+}
+
+function syncCartProductRefs() {
+  Object.keys(cart).forEach(id => { if (!products.find(p => p.id === id)) delete cart[id]; });
+  saveCart();
+}
+
+// ── Category Tiles ─────────────────────────────────────────────────────
+function renderCategoryTiles() {
+  const grid = document.getElementById('catGrid');
+  if (!grid) return;
+  grid.innerHTML = CATS.map(cat => {
+    const count = products.filter(p => p.category === cat && p.inStock).length;
+    const label = (CAT_LABELS[cat] || cat).replace('\n', '<br>');
+    const isActive = activeCat === cat ? 'active' : '';
+    return `
+      <div class="cat-tile ${isActive}" onclick="filterCat('${escapeHtml(cat)}');document.querySelectorAll('.cat-tile').forEach(t=>t.classList.remove('active'));this.classList.add('active')">
+        <div class="tile-icon">${CAT_ICONS[cat] || '📦'}</div>
+        <div class="tile-label">${label}</div>
+        <div style="font-size:9px;color:#1e3f5a;font-family:'JetBrains Mono',monospace;margin-top:3px;">${count} items</div>
+      </div>`;
+  }).join('');
+}
+
+function setNavActive(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function filterCat(cat) {
+  activeCat = cat;
+  renderGrid();
+  renderCategoryTiles();
+}
+
+function onSearch(val) {
+  searchQ = val.trim().toLowerCase();
+  renderGrid();
+}
+
+function clearSearch() {
+  searchQ = '';
+  document.getElementById('searchInput').value = '';
+  renderGrid();
+}
+
+// ── Products Grid ─────────────────────────────────────────────────────
+function renderGrid() {
+  const grid  = document.getElementById('productGrid');
+  const empty = document.getElementById('emptyState');
+  const label = document.getElementById('filterLabel');
+  const count = document.getElementById('searchCount');
+
+  const filtered = products.filter(p => {
+    const matchCat = activeCat === 'All' || p.category === activeCat;
+    const matchQ   = !searchQ || p.name.toLowerCase().includes(searchQ) || p.category.toLowerCase().includes(searchQ);
+    return matchCat && matchQ;
+  });
+
+  if (label) label.textContent = activeCat === 'All' ? 'All Products' : activeCat;
+  if (count) count.textContent = `${filtered.length} of ${products.length} items`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(p => {
+    const qty = cart[p.id] || 0;
+    const status = p.stockStatus || (p.inStock ? 'In Stock' : 'Out of Stock');
+    const isOut  = status === 'Out of Stock' || !p.inStock;
+    const isLow  = status === 'Low Stock';
+    const img    = p.image || IMG_FALLBACK;
+    const discPct = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+
+    return `
+      <div class="product-card ${isOut ? 'opacity-60' : ''}" style="${isOut ? 'opacity:.55' : ''}">
+        <div style="position:relative;overflow:hidden;">
+          <img src="${img}" alt="${escapeHtml(p.name)}"
+               class="card-img"
+               onerror="this.onerror=null;this.src='${IMG_FALLBACK}'"
+               loading="lazy"/>
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(3,9,20,.6) 0%,transparent 50%);"></div>
+          ${discPct >= 5 ? `<span class="discount-badge">${discPct}% OFF</span>` : ''}
+          <span class="stock-badge ${isOut ? 'stock-out' : isLow ? 'stock-low' : 'stock-in'}">
+            ${isOut ? 'OUT OF STOCK' : isLow ? '⚡ LOW STOCK' : '● In Stock'}
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${escapeHtml(p.name)}</div>
+          <div class="card-unit">${escapeHtml(p.unit || '1 unit')}</div>
+          <div class="card-footer">
+            <div class="card-price">
+              ₹${p.price}
+              ${p.mrp && p.mrp > p.price ? `<span class="mrp">₹${p.mrp}</span>` : ''}
+            </div>
+            ${isOut
+              ? `<button disabled style="padding:5px 12px;font-size:11px;border-radius:7px;background:#0b1929;color:#2d5470;border:1px solid #0f2540;cursor:not-allowed;">Unavailable</button>`
+              : qty > 0
+              ? `<div class="qty-ctrl">
+                   <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
+                   <span class="qty-num">${qty}</span>
+                   <button class="qty-btn" onclick="changeQty('${p.id}',1)">+</button>
+                 </div>`
+              : `<button onclick="addToCart('${p.id}')" class="btn-outline-cyan" style="padding:5px 12px;font-size:11px;font-weight:700;">+ Add</button>`
+            }
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Cart ────────────────────────────────────────────────────────────
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  if (!p || (!p.inStock && p.stockStatus === 'Out of Stock')) return;
+  cart[id] = (cart[id] || 0) + 1;
+  saveCart();
+  showToast(`+ Added ${p.name} to bag`);
+}
+
+function changeQty(id, delta) {
+  cart[id] = (cart[id] || 0) + delta;
+  if (cart[id] <= 0) delete cart[id];
+  saveCart();
+}
+
+function removeFromCart(id) {
+  delete cart[id];
+  saveCart();
+  showToast('Removed from bag');
+}
+
+function saveCart() {
+  localStorage.setItem('aura_cart_v5', JSON.stringify(cart));
+  updateCartUI();
+  renderGrid();
+}
+
+
+function cartTotals() {
+  let subtotal = 0, count = 0;
+  Object.entries(cart).forEach(([id, qty]) => {
+    const p = products.find(x => x.id === id);
+    if (p) { subtotal += p.price * qty; count += qty; }
+  });
+
+  // In-Store Pickup model: Free collection (₹0 delivery fee), ₹0 handling
+  const deliveryFee = 0;
+  const total = subtotal;
+
+  return { subtotal, total, count, deliveryFee };
+}
+
+function updateCartUI() {
+  const { subtotal, total, count } = cartTotals();
+  const $ = id => document.getElementById(id);
+
+  $('cartBadge').textContent       = count;
+  $('cartHeaderTotal').textContent = `₹${total}`;
+  $('cartSubtitle').textContent    = `${count} item${count !== 1 ? 's' : ''} in your bag`;
+
+  const entries = Object.entries(cart);
+
+  // ── Side panel bag ──
+  const cartItems  = $('cartItems');
+  const cartEmpty  = $('cartEmpty');
+  const cartFooter = $('cartFooter');
+
+  if (count === 0) {
+    cartItems.innerHTML = '';
+    cartEmpty.style.display = '';
+    cartFooter.style.display = 'none';
+  } else {
+    cartEmpty.style.display = 'none';
+    cartFooter.style.display = '';
+    cartItems.innerHTML = entries.map(([id, qty]) => {
+      const p = products.find(x => x.id === id);
+      if (!p) return '';
+      return `
+        <div class="bag-item">
+          <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#c8e4f4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size:10px;color:#2d5470;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = ₹${p.price * qty}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <div class="qty-ctrl" style="border-radius:7px;">
+              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',-1)">−</button>
+              <span class="qty-num" style="font-size:10px;">${qty}</span>
+              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',1)">+</button>
+            </div>
+            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#1e3f5a;cursor:pointer;font-size:13px;padding:2px;">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    $('cartSubtotalLabel').textContent = `₹${subtotal}`;
+    $('cartTotalLabel').textContent    = `₹${total}`;
+  }
+
+  // ── Mobile bag drawer ──
+  updateMobileBag(entries, count, subtotal, total);
+}
+
+function updateMobileBag(entries, count, subtotal, total) {
+  const $ = id => document.getElementById(id);
+  const mItems   = $('mBagItems');
+  const mEmpty   = $('mBagEmpty');
+  const mFooter  = $('mBagFooter');
+
+  if (count === 0) {
+    mItems.innerHTML = '';
+    mEmpty.style.display = 'flex';
+    mFooter.style.display = 'none';
+  } else {
+    mEmpty.style.display = 'none';
+    mFooter.style.display = '';
+    mItems.innerHTML = entries.map(([id, qty]) => {
+      const p = products.find(x => x.id === id);
+      if (!p) return '';
+      return `
+        <div class="bag-item">
+          <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#c8e4f4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size:10px;color:#2d5470;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = ₹${p.price * qty}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <div class="qty-ctrl" style="border-radius:7px;">
+              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',-1)">−</button>
+              <span class="qty-num" style="font-size:10px;">${qty}</span>
+              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',1)">+</button>
+            </div>
+            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#1e3f5a;cursor:pointer;font-size:13px;padding:2px;">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+    $('mBagSubtotal').textContent = `₹${subtotal}`;
+    $('mBagTotal').textContent    = `₹${total}`;
+  }
+}
+
+// ── Mobile Bag Drawer ──────────────────────────────────────────────
+function openMobileBag() {
+  document.getElementById('bagDrawer').style.transform = 'translateX(0)';
+  document.getElementById('bagDrawerBackdrop').style.display = 'block';
+}
+function closeMobileBag() {
+  document.getElementById('bagDrawer').style.transform = 'translateX(100%)';
+  document.getElementById('bagDrawerBackdrop').style.display = 'none';
+}
+
+// ── Mobile Sidebar ─────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const isOpen = sb.classList.contains('mobile-open');
+  if (isOpen) {
+    sb.classList.remove('mobile-open');
+    ov.classList.remove('active');
+  } else {
+    sb.classList.add('mobile-open');
+    ov.classList.add('active');
+  }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+}
+
+// ── CHECKOUT & OTP ────────────────────────────────────────────────
+function openCheckoutOnboarding() {
+  const { count, total } = cartTotals();
+  if (count === 0) { showToast('Your bag is empty!', 'error'); return; }
+  closeMobileBag();
+
+  document.getElementById('onboardingTotalBadge').textContent = `₹${total}`;
+  document.getElementById('step1FormWrapper').style.display = '';
+  document.getElementById('step2OtpWrapper').style.display  = 'none';
+  document.getElementById('onboardingStepTitle').textContent = 'Customer Verification';
+
+  document.getElementById('onboardingModal').classList.add('open');
+}
+
+function closeCheckoutOnboarding() {
+  document.getElementById('onboardingModal').classList.remove('open');
+}
+
+function handleRequestOtp(e) {
+  e.preventDefault();
+  const name    = document.getElementById('custFullName').value.trim();
+  const phone   = document.getElementById('custPhoneNum').value.trim();
+  const slot    = document.getElementById('custPickupSlot').value;
+  const station = document.getElementById('custPickupStation')?.value || 'Station 01 — Store Counter Bay A';
+  const payment = document.getElementById('custPaymentMethod')?.value || 'UPI / QR Scan at Counter';
+  const { total, subtotal } = cartTotals();
+
+  if (!name)           { showToast('Please enter your full name', 'error'); return; }
+  if (phone.length < 10) { showToast('Please enter a valid 10-digit mobile number', 'error'); return; }
+
+  const items = Object.entries(cart).map(([id, qty]) => {
+    const p = products.find(x => x.id === id);
+    return { productId: id, name: p?.name || 'Item', price: p?.price || 0, quantity: qty, subtotal: (p?.price || 0) * qty };
+  });
+
+  currentPendingOrderData = {
+    customerName: name,
+    phone,
+    pickupLocation: station,
+    pickupSlot: slot,
+    orderType: 'In-Store Pickup',
+    paymentMethod: payment,
+    items,
+    subtotal,
+    deliveryFee: 0,
+    totalAmount: total
+  };
+
+  generateNewOtp();
+  startOtpCooldown();
+
+  document.getElementById('step1FormWrapper').style.display = 'none';
+  document.getElementById('step2OtpWrapper').style.display  = '';
+  document.getElementById('onboardingStepTitle').textContent = 'Phone OTP Verification';
+  document.getElementById('otpTargetPhone').textContent = `+91 ${phone}`;
+
+  for (let i = 1; i <= 4; i++) document.getElementById(`otpBox${i}`).value = '';
+  document.getElementById('otpBox1').focus();
+  showToast(`🔐 Verification code sent to +91 ${phone}`);
+}
+
+let otpCooldownTimer = null;
+let otpCooldownSeconds = 0;
+
+function startOtpCooldown() {
+  otpCooldownSeconds = 60;
+  updateCooldownUI();
+  clearInterval(otpCooldownTimer);
+  otpCooldownTimer = setInterval(() => {
+    otpCooldownSeconds--;
+    if (otpCooldownSeconds <= 0) { clearInterval(otpCooldownTimer); otpCooldownSeconds = 0; }
+    updateCooldownUI();
+  }, 1000);
+}
+
+function updateCooldownUI() {
+  const btn  = document.getElementById('resendOtpBtn');
+  const span = document.getElementById('resendCountdown');
+  if (!btn || !span) return;
+  if (otpCooldownSeconds > 0) {
+    btn.disabled = true;
+    btn.style.cursor = 'not-allowed';
+    span.textContent = `(${otpCooldownSeconds}s)`;
+    span.style.color = 'var(--cyan)';
+  } else {
+    btn.disabled = false;
+    btn.style.cursor = 'pointer';
+    span.textContent = '';
+    btn.style.color = 'var(--cyan)';
+  }
+}
+
+function generateNewOtp() {
+  activeOtpCode = String(Math.floor(1000 + Math.random() * 9000));
+  document.getElementById('generatedOtpDisplay').textContent = activeOtpCode;
+}
+
+function regenerateOtp() {
+  if (otpCooldownSeconds > 0) { showToast(`Please wait ${otpCooldownSeconds}s`, 'error'); return; }
+  generateNewOtp();
+  startOtpCooldown();
+  showToast('✓ New verification OTP sent!');
+}
+
+function autoFillOtp() {
+  if (!activeOtpCode || activeOtpCode.length !== 4) return;
+  for (let i = 1; i <= 4; i++) document.getElementById(`otpBox${i}`).value = activeOtpCode[i - 1];
+  document.getElementById('otpErrorMsg').style.display = 'none';
+}
+
+function handleOtpInput(idx, el) {
+  document.getElementById('otpErrorMsg').style.display = 'none';
+  if (el.value.length === 1 && idx < 4) document.getElementById(`otpBox${idx + 1}`).focus();
+}
+
+function handleOtpKey(idx, e) {
+  if (e.key === 'Backspace' && !e.target.value && idx > 1) document.getElementById(`otpBox${idx - 1}`).focus();
+  if (e.key === 'Enter') verifyOtpAndPlaceOrder();
+}
+
+function backToStep1() {
+  document.getElementById('step2OtpWrapper').style.display  = 'none';
+  document.getElementById('step1FormWrapper').style.display = '';
+  document.getElementById('onboardingStepTitle').textContent = 'Customer Verification';
+}
+
+function verifyOtpAndPlaceOrder() {
+  const entered = [1,2,3,4].map(i => document.getElementById(`otpBox${i}`).value.trim()).join('');
+  if (entered !== activeOtpCode) {
+    document.getElementById('otpErrorMsg').style.display = '';
+    showToast('⛔ Invalid OTP. Check the code shown above.', 'error');
+    return;
+  }
+  if (!currentPendingOrderData || !window.AURA_DB) return;
+
+  const order = AURA_DB.placeOrder(currentPendingOrderData);
+  activeOrderId = order.id;
+  localStorage.setItem('aura_active_order_v5', order.id);
+
+  cart = {};
+  saveCart();
+  closeCheckoutOnboarding();
+  showToast('🎉 In-Store Pickup Pass Confirmed!');
+  renderPickupPass(order);
+  checkActiveOrder();
+}
+
+// ── 6-DIGIT IN-STORE PICKUP PASS & QR CODE MODAL ──────────────────
+function renderPickupPass(order) {
+  const el = id => document.getElementById(id);
+
+  if (el('passPinCode'))   el('passPinCode').textContent   = order.pin || '------';
+  if (el('passCode'))      el('passCode').textContent      = order.pickupCode || 'PK-000';
+  if (el('passOrderId'))   el('passOrderId').textContent   = order.id || 'ORD-000000';
+  if (el('passCustName'))  el('passCustName').textContent  = order.customerName || '—';
+  if (el('passSlot'))      el('passSlot').textContent      = order.pickupSlot || 'Instant Express (15-20 Mins)';
+  if (el('passStation'))   el('passStation').textContent   = order.pickupLocation || 'Station 01 — Store Counter Bay A';
+  if (el('passTotal'))     el('passTotal').textContent     = `₹${order.totalAmount}`;
+
+  setPickupStatusUI(order.status || 'Received');
+  renderSvgQrCode(`${order.id}|${order.pickupCode}|PIN:${order.pin}`);
+  document.getElementById('passBg').classList.add('open');
+}
+
+function openPassModal() {
+  if (!activeOrderId || !window.AURA_DB) return;
+  const order = AURA_DB.getOrderById(activeOrderId);
+  if (order) renderPickupPass(order);
+}
+
+function closePassModal() {
+  document.getElementById('passBg').classList.remove('open');
+}
+
+function copyPinToClipboard() {
+  const pin = document.getElementById('passPinCode')?.textContent?.trim() || '------';
+  navigator.clipboard.writeText(pin).then(() => showToast(`📋 6-Digit PIN ${pin} copied!`)).catch(() => showToast(`PIN: ${pin}`));
+}
+
+/**
+ * Pure SVG Offline QR Code Generator Matrix for counter scanning
+ */
+function renderSvgQrCode(dataString) {
+  const size = 25;
+  const modules = Array(size).fill(0).map(() => Array(size).fill(0));
+
+  function drawFinder(sx, sy) {
+    for (let r = 0; r < 7; r++) {
+      for (let c = 0; c < 7; c++) {
+        if (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
+          modules[sy + r][sx + c] = 1;
+        }
+      }
+    }
+  }
+
+  drawFinder(0, 0);
+  drawFinder(size - 7, 0);
+  drawFinder(0, size - 7);
+
+  for (let i = 8; i < size - 8; i++) {
+    modules[6][i] = i % 2 === 0 ? 1 : 0;
+    modules[i][6] = i % 2 === 0 ? 1 : 0;
+  }
+
+  let hash = 0;
+  for (let i = 0; i < dataString.length; i++) {
+    hash = ((hash << 5) - hash) + dataString.charCodeAt(i);
+    hash |= 0;
+  }
+
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const inTL = r < 8 && c < 8;
+      const inTR = r < 8 && c >= size - 8;
+      const inBL = r >= size - 8 && c < 8;
+      if (inTL || inTR || inBL || r === 6 || c === 6) continue;
+      modules[r][c] = ((hash ^ (r * 31 + c * 17)) + (r * c)) % 3 === 0 ? 1 : 0;
+    }
+  }
+
+  const scale = 5;
+  const totalPx = size * scale;
+  let rects = '';
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (modules[r][c] === 1) {
+        rects += `<rect x="${c * scale}" y="${r * scale}" width="${scale}" height="${scale}" fill="#00D8F6"/>`;
+      }
+    }
+  }
+
+  const qrContainer = document.getElementById('qrCodeContainer');
+  if (qrContainer) {
+    qrContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalPx}" height="${totalPx}"><rect width="${totalPx}" height="${totalPx}" fill="#030914"/>${rects}</svg>`;
+  }
+}
+
+function setPickupStatusUI(status) {
+  const badge = document.getElementById('passStatus');
+  const desc  = document.getElementById('passStatusDesc');
+
+  if (!badge) return;
+
+  if (status === 'Received') {
+    badge.textContent = 'Received';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,216,246,.12);color:var(--cyan);border:1px solid rgba(0,216,246,.3);animation:ping 1s infinite;';
+    if (desc) desc.textContent = 'Order logged. Store team is reviewing your item queue.';
+  } else if (status === 'Packing') {
+    badge.textContent = 'Assembling';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,170,0,.15);color:#ffc040;border:1px solid rgba(255,170,0,.3);animation:ping 1s infinite;';
+    if (desc) desc.textContent = 'Store staff is assembling your bag for express pickup.';
+  } else if (status === 'Ready for Pickup') {
+    badge.textContent = 'Ready for Pickup';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,196,106,.15);color:#0dc875;border:1px solid rgba(0,196,106,.3);';
+    if (desc) desc.textContent = '🎉 Bag packed! Walk up to Bay Counter & verify with your 6-digit PIN.';
+  } else if (status === 'Completed') {
+    badge.textContent = 'Collected ✓';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:#0f2540;color:#7ab0cc;border:1px solid #1a3050;';
+    if (desc) desc.textContent = '✓ Order handed over at counter. Thank you for collecting at FreshCart!';
+  }
+}
+
+function checkActiveOrder() {
+  if (!activeOrderId || !window.AURA_DB) return;
+  const order = AURA_DB.getOrderById(activeOrderId);
+  if (!order) return;
+
+  const trackBtn = document.getElementById('trackBtn');
+  const trackerBar = document.getElementById('trackerBar');
+
+  if (trackBtn) {
+    trackBtn.style.display = 'flex';
+    document.getElementById('trackBtnText').textContent = `${order.pickupCode || 'PK-000'} · ${order.status}`;
+  }
+
+  if (trackerBar) {
+    trackerBar.classList.add('show');
+    const codeEl = document.getElementById('trackerCode');
+    if (codeEl) codeEl.textContent = order.pickupCode || 'PK-000';
+    const pinEl = document.getElementById('trackerPin');
+    if (pinEl) pinEl.textContent = `PIN: ${order.pin || '------'}`;
+    const statusEl = document.getElementById('trackerStatus');
+    const dotEl = document.getElementById('trackerDot');
+
+    if (order.status === 'Completed') {
+      if (dotEl) dotEl.style.background = '#0dc875';
+      if (statusEl) { statusEl.textContent = 'Order Collected at Counter'; statusEl.style.color = '#0dc875'; }
+    } else if (order.status === 'Ready for Pickup') {
+      if (dotEl) dotEl.style.background = '#0dc875';
+      if (statusEl) { statusEl.textContent = 'Bag Ready at Counter Bay!'; statusEl.style.color = '#0dc875'; }
+      showToast('🎉 Order is READY FOR PICKUP at the counter!');
+    } else if (order.status === 'Packing') {
+      if (dotEl) dotEl.style.background = '#ffc040';
+      if (statusEl) { statusEl.textContent = 'Assembling at Store Vault'; statusEl.style.color = '#ffc040'; }
+    } else {
+      if (dotEl) dotEl.style.background = 'var(--cyan)';
+      if (statusEl) { statusEl.textContent = 'Order Logged for Store Pickup'; statusEl.style.color = 'var(--cyan)'; }
+    }
+  }
+
+  setPickupStatusUI(order.status || 'Received');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── CSS keyframe for pulsing dots (injected) ──────────────────────
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes ping { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .modal-backdrop { overflow-y:auto; }
+`;
+document.head.appendChild(style);
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

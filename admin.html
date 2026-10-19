@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AURA COMMAND — Mobile Zero-G Admin</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Supabase Cloud DB Client (Optional Remote Sync) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="store.js"></script>
+  <style>
+    :root {
+      --bg-space: #030308;
+      --glass-panel: rgba(13, 16, 28, 0.82);
+      --border-cyan: rgba(6, 182, 212, 0.28);
+      --border-violet: rgba(139, 92, 246, 0.28);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Space Grotesk', sans-serif;
+      background: var(--bg-space);
+      color: #e2e8f0;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 84px; /* Space for mobile bottom bar */
+    }
+
+    /* Deep space background with subtle cyber grid */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(6, 182, 212, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      pointer-events: none;
+    }
+
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Glassmorphic panels */
+    .glass {
+      background: var(--glass-panel);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-cyan {
+      background: rgba(6, 182, 212, 0.05);
+      border: 1px solid var(--border-cyan);
+    }
+    .glass-violet {
+      background: rgba(139, 92, 246, 0.05);
+      border: 1px solid var(--border-violet);
+    }
+    .glass-emerald {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Neon glow effects */
+    .glow-cyan { box-shadow: 0 0 24px rgba(6, 182, 212, 0.35); }
+    .glow-violet { box-shadow: 0 0 24px rgba(139, 92, 246, 0.35); }
+    .text-glow-cyan { text-shadow: 0 0 14px rgba(6, 182, 212, 0.8), 0 0 28px rgba(6, 182, 212, 0.4); }
+    .text-glow-violet { text-shadow: 0 0 14px rgba(139, 92, 246, 0.8), 0 0 28px rgba(139, 92, 246, 0.4); }
+
+    /* Levitation & animations */
+    @keyframes floatLev {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .lev-card {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .lev-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px -10px rgba(6, 182, 212, 0.25);
+    }
+
+    /* Inputs */
+    .neon-input {
+      background: rgba(10, 14, 26, 0.8);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 12px;
+      color: #f1f5f9;
+      padding: 12px 16px;
+      width: 100%;
+      outline: none;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .neon-input:focus {
+      border-color: #22d3ee;
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+      background: rgba(13, 20, 38, 0.95);
+    }
+    .neon-input::placeholder { color: #64748b; }
+    select.neon-input option { background: #0b0f19; color: #f1f5f9; }
+
+    /* Buttons */
+    .btn-cyan {
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
+      color: #030712;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 12px 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-cyan:hover, .btn-cyan:active {
+      background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+      box-shadow: 0 0 28px rgba(6, 182, 212, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-violet {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      box-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
+      color: #ffffff;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 12px 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-violet:hover, .btn-violet:active {
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      box-shadow: 0 0 28px rgba(139, 92, 246, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-emerald {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.35);
+      color: #030712;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 12px 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-emerald:hover, .btn-emerald:active {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      box-shadow: 0 0 28px rgba(16, 185, 129, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(2, 4, 10, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-content {
+      background: #070a14;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(6, 182, 212, 0.15);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* Keypad buttons for PIN verification */
+    .pin-btn {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      color: #f8fafc;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      border-radius: 14px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pin-btn:hover, .pin-btn:active {
+      background: rgba(6, 182, 212, 0.2);
+      border-color: #22d3ee;
+      transform: scale(0.96);
+    }
+
+    /* Segmented status controls */
+    .status-seg-btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.03);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .status-seg-btn.active-in {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+      color: #34d399;
+    }
+    .status-seg-btn.active-low {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    .status-seg-btn.active-out {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: #f43f5e;
+      color: #fb7185;
+    }
+
+    /* Toast Notification */
+    #toast-wrap {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      left: 20px;
+      max-width: 420px;
+      margin: 0 auto;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .toast-box {
+      background: rgba(11, 16, 32, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Container -->
+  <div id="toast-wrap"></div>
+
+  <!-- ══════════════════════════════════════════════════════
+       1. AUTHENTICATION GATE (Protected /admin route)
+  ══════════════════════════════════════════════════════ -->
+  <div id="authGate" class="min-h-screen flex items-center justify-center p-4 relative z-10">
+    <div class="w-full max-w-md">
+      <!-- Logo Branding -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass-cyan glow-cyan mb-4">
+          <span class="text-3xl">⚡</span>
+        </div>
+        <h1 class="font-display font-bold text-2xl tracking-widest text-glow-cyan" style="color:#22d3ee; letter-spacing:0.18em;">AURA COMMAND</h1>
+        <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-mono">Zero-G Mobile Admin Portal</p>
+      </div>
+
+      <!-- Auth Card -->
+      <div class="glass rounded-2xl p-6 sm:p-8 relative overflow-hidden" style="border: 1px solid var(--border-cyan);">
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="font-display font-bold text-lg text-white">Staff Authentication</h2>
+          <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">RESTRICTED</span>
+        </div>
+
+        <form id="loginForm" onsubmit="handleAdminLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Admin Email</label>
+            <input id="loginEmail" type="email" class="neon-input" placeholder="amalkppdm07@gmail.com" required autocomplete="username" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Security Key / Password</label>
+            <input id="loginPassword" type="password" class="neon-input" placeholder="••••••••••••" required autocomplete="current-password" />
+          </div>
+
+          <div id="authError" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <span>⛔</span>
+            <span id="authErrorMsg">Access Denied. Check credentials.</span>
+          </div>
+
+          <button id="authBtn" type="submit" class="btn-cyan w-full text-sm">
+            <span>Unlock Admin Terminal</span>
+            <span class="text-base">→</span>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between text-xs">
+          <a href="index.html" class="text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
+            <span>←</span>
+            <span>Return to Storefront</span>
+          </a>
+          <button type="button" onclick="autoFillDevCredentials()" class="text-cyan-400 hover:underline font-mono text-[11px]">
+            ⚡ Fill Dev Auth
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       2. MOBILE-FRIENDLY ADMIN DASHBOARD (When Authenticated)
+  ══════════════════════════════════════════════════════ -->
+  <div id="adminApp" class="hidden relative z-10">
+
+    <!-- Top Sticky Header -->
+    <header class="glass sticky top-0 z-40 px-4 py-3.5 border-b border-cyan-500/20">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl glass-cyan flex items-center justify-center glow-cyan text-lg">⚡</div>
+          <div>
+            <div class="font-display font-bold text-sm tracking-wider text-cyan-300">AURA COMMAND</div>
+            <div class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="adminEmailBadge">amalkppdm07@gmail.com</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Desktop navigation tabs -->
+          <div class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            <button onclick="switchTab('orders')" id="tabBtn-orders" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+              📋 Live Orders (<span id="desktopOrdersCount">0</span>)
+            </button>
+            <button onclick="switchTab('products')" id="tabBtn-products" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 transition-all">
+              📦 Products (<span id="desktopProductsCount">0</span>)
+            </button>
+            <button onclick="switchTab('verify')" id="tabBtn-verify" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+              🔍 Verify PIN
+            </button>
+          </div>
+
+          <!-- Cloud Sync Connection Indicator / Settings Button -->
+          <button onclick="openCloudDbModal()" id="cloudStatusBtn" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors" title="Supabase / Cloud DB Connection">
+            <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+            <span id="cloudStatusText" class="hidden sm:inline">Local DB</span>
+          </button>
+
+          <button onclick="openAddProductModal()" class="btn-cyan text-xs py-2 px-3.5 hidden sm:inline-flex">
+            <span>+ Add Product</span>
+          </button>
+
+          <a href="index.html" target="_blank" class="btn-ghost text-xs py-2 px-3 hidden lg:inline-flex" title="View Customer Storefront">
+            <span>↗ Customer Store</span>
+          </a>
+
+          <button onclick="handleAdminLogout()" class="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs transition-colors" title="Logout">
+            🚪
+          </button>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- Main Body Container -->
+    <main class="max-w-7xl mx-auto px-4 py-5 space-y-6">
+
+      <!-- Stats Overview Row -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="glass-cyan rounded-2xl p-4 lev-card">
+          <div class="flex items-center justify-between text-xs text-cyan-400 font-mono mb-1">
+            <span>TOTAL PRODUCTS</span>
+            <span>📦</span>
+          </div>
+          <div id="statTotalProducts" class="text-2xl sm:text-3xl font-display font-bold text-white">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Catalog items active</div>
+        </div>
+
+        <div class="glass-emerald rounded-2xl p-4 lev-card">
+          <div class="flex items-center justify-between text-xs text-emerald-400 font-mono mb-1">
+            <span>ACTIVE ORDERS</span>
+            <span>⚡</span>
+          </div>
+          <div id="statActiveOrders" class="text-2xl sm:text-3xl font-display font-bold text-emerald-300">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Pending pickup</div>
+        </div>
+
+        <div class="glass-violet rounded-2xl p-4 lev-card">
+          <div class="flex items-center justify-between text-xs text-violet-400 font-mono mb-1">
+            <span>COMPLETED</span>
+            <span>✓</span>
+          </div>
+          <div id="statCompletedOrders" class="text-2xl sm:text-3xl font-display font-bold text-violet-300">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Handed over today</div>
+        </div>
+
+        <div class="glass rounded-2xl p-4 lev-card border-amber-500/30">
+          <div class="flex items-center justify-between text-xs text-amber-400 font-mono mb-1">
+            <span>TOTAL REVENUE</span>
+            <span>₹</span>
+          </div>
+          <div id="statTotalRevenue" class="text-2xl sm:text-3xl font-display font-bold text-amber-300">₹0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Gross pickup orders</div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════
+           TAB A: PRODUCTS MANAGEMENT
+      ══════════════════════════════════════════════════ -->
+      <section id="viewProducts" class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-display font-bold text-xl text-white">Inventory Catalog</h2>
+            <p class="text-xs text-slate-400">Manage real-time prices, stock status & images</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="productSearchInput" type="text" oninput="renderProductsTable()" placeholder="Search title or category…" class="neon-input text-xs py-2 px-3 max-w-[220px]" />
+            <button onclick="openAddProductModal()" class="btn-cyan text-xs py-2 px-4 whitespace-nowrap">
+              + New Item
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button onclick="filterProductCategory('All')" id="pCatBtn-All" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">All</button>
+          <button onclick="filterProductCategory('Hydroponics')" id="pCatBtn-Hydroponics" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">🌱 Hydroponics</button>
+          <button onclick="filterProductCategory('Synthesized Proteins')" id="pCatBtn-Synthesized Proteins" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">🧬 Synthesized Proteins</button>
+          <button onclick="filterProductCategory('Orbital Dairy')" id="pCatBtn-Orbital Dairy" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">🥛 Orbital Dairy</button>
+          <button onclick="filterProductCategory('Zero-G Pantry')" id="pCatBtn-Zero-G Pantry" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">🌾 Zero-G Pantry</button>
+          <button onclick="filterProductCategory('Beverages & Elixirs')" id="pCatBtn-Beverages & Elixirs" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">⚡ Beverages</button>
+          <button onclick="filterProductCategory('Snacks & Rations')" id="pCatBtn-Snacks & Rations" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">🍿 Snacks</button>
+        </div>
+
+        <!-- Responsive Products Grid / Cards (Mobile-Optimized) -->
+        <div id="productsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div id="productsEmpty" class="hidden glass rounded-2xl p-12 text-center text-slate-400">
+          <div class="text-4xl mb-2">📦</div>
+          <p class="text-sm">No products found matching your search.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════
+           TAB B: LIVE ORDERS MANAGEMENT BOARD
+      ══════════════════════════════════════════════════ -->
+      <section id="viewOrders" class="hidden space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="font-display font-bold text-xl text-white">Live Orders Stream</h2>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            </div>
+            <p class="text-xs text-slate-400">Real-time incoming customer pickup orders</p>
+          </div>
+
+          <!-- Order Status Filter Pills -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <button onclick="filterOrderStatus('All')" id="ordStatus-All" class="px-3 py-1 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">All</button>
+            <button onclick="filterOrderStatus('Received')" id="ordStatus-Received" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Received</button>
+            <button onclick="filterOrderStatus('Packing')" id="ordStatus-Packing" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Packing</button>
+            <button onclick="filterOrderStatus('Ready for Pickup')" id="ordStatus-Ready" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Ready</button>
+            <button onclick="filterOrderStatus('Completed')" id="ordStatus-Completed" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Completed</button>
+          </div>
+        </div>
+
+        <!-- Orders Cards Container -->
+        <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div id="ordersEmpty" class="hidden glass rounded-2xl p-12 text-center text-slate-400">
+          <div class="text-4xl mb-3">📡</div>
+          <p class="font-display font-semibold text-white">No orders in this state</p>
+          <p class="text-xs text-slate-500 mt-1">Listening on real-time broadcast channel...</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════
+           TAB C: VERIFY PICKUP PIN TOOL
+      ══════════════════════════════════════════════════ -->
+      <section id="viewVerify" class="hidden space-y-6">
+        <div class="max-w-xl mx-auto">
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl glass-cyan glow-cyan mb-3">
+              <span class="text-2xl">🔐</span>
+            </div>
+            <h2 class="font-display font-bold text-2xl text-white">Staff PIN Verification Terminal</h2>
+            <p class="text-xs text-slate-400 mt-1">Enter the customer's 6-digit confirmation PIN to validate & release order</p>
+          </div>
+
+          <!-- PIN Search & Input Field -->
+          <div class="glass-cyan rounded-2xl p-5 mb-5 border-2 border-cyan-500/40">
+            <label class="block text-xs font-mono text-cyan-400 uppercase tracking-widest mb-2 text-center">Customer 6-Digit PIN or Code</label>
+            <div class="flex items-center gap-2">
+              <input type="text" id="pinDirectInput" maxlength="6" placeholder="Enter 6-digit PIN (e.g. 748219)"
+                     class="neon-input text-center font-mono font-bold text-xl sm:text-2xl tracking-[0.2em] text-white py-3"
+                     oninput="handleDirectPinInput(this.value)" onkeydown="if(event.key==='Enter') executePinVerification()" />
+              <button type="button" onclick="executePinVerification()" class="btn-cyan py-3.5 px-5 font-bold whitespace-nowrap text-sm">
+                🔍 Verify
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2 text-center">Type with keyboard or use the touch keypad below</p>
+          </div>
+
+          <!-- Virtual Numeric Keypad (Optimized for Mobile Staff) -->
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <button type="button" onclick="keypadPress('1')" class="pin-btn">1</button>
+            <button type="button" onclick="keypadPress('2')" class="pin-btn">2</button>
+            <button type="button" onclick="keypadPress('3')" class="pin-btn">3</button>
+            <button type="button" onclick="keypadPress('4')" class="pin-btn">4</button>
+            <button type="button" onclick="keypadPress('5')" class="pin-btn">5</button>
+            <button type="button" onclick="keypadPress('6')" class="pin-btn">6</button>
+            <button type="button" onclick="keypadPress('7')" class="pin-btn">7</button>
+            <button type="button" onclick="keypadPress('8')" class="pin-btn">8</button>
+            <button type="button" onclick="keypadPress('9')" class="pin-btn">9</button>
+            <button type="button" onclick="keypadClear()" class="pin-btn text-rose-400 text-sm font-bold">CLR</button>
+            <button type="button" onclick="keypadPress('0')" class="pin-btn">0</button>
+            <button type="button" onclick="keypadBackspace()" class="pin-btn text-amber-400 text-lg">⌫</button>
+          </div>
+
+          <!-- Action Verify Button -->
+          <button id="verifyPinBtn" onclick="executePinVerification()" class="btn-cyan w-full text-base py-3.5">
+            <span>Verify Pickup PIN</span>
+            <span>⚡</span>
+          </button>
+
+          <!-- Result Card (Shown after verification) -->
+          <div id="pinResultCard" class="hidden mt-6 glass rounded-2xl p-6 border-2">
+            <!-- Dynamic order details populated here -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+
+    <!-- ══════════════════════════════════════════════════
+         MOBILE BOTTOM NAVIGATION BAR (Thumb Friendly)
+    ══════════════════════════════════════════════════ -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-cyan-500/20 px-3 py-2 flex items-center justify-around">
+      <button onclick="switchTab('orders')" id="mTab-orders" class="flex flex-col items-center gap-1 p-1 text-slate-400 relative">
+        <span class="text-lg">📋</span>
+        <span class="text-[10px] font-semibold">Orders</span>
+        <span id="mobileOrdersBadge" class="hidden absolute top-0 right-1 w-4 h-4 bg-emerald-500 text-black text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
+      </button>
+
+      <button onclick="switchTab('products')" id="mTab-products" class="flex flex-col items-center gap-1 p-1 text-cyan-300">
+        <span class="text-lg">📦</span>
+        <span class="text-[10px] font-semibold">Products</span>
+      </button>
+
+      <button onclick="openAddProductModal()" class="w-12 h-12 -mt-5 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold text-2xl flex items-center justify-center glow-cyan shadow-lg active:scale-95 transition-transform">
+        +
+      </button>
+
+      <button onclick="switchTab('verify')" id="mTab-verify" class="flex flex-col items-center gap-1 p-1 text-slate-400">
+        <span class="text-lg">🔍</span>
+        <span class="text-[10px] font-semibold">Verify PIN</span>
+      </button>
+
+      <a href="index.html" target="_blank" class="flex flex-col items-center gap-1 p-1 text-slate-400">
+        <span class="text-lg">🛒</span>
+        <span class="text-[10px] font-semibold">Store</span>
+      </a>
+    </nav>
+
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       3. ADD / EDIT PRODUCT MODAL (Mobile Friendly)
+  ══════════════════════════════════════════════════════ -->
+  <div id="productModal" class="modal-overlay hidden">
+    <div class="modal-content p-5 sm:p-7">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div>
+          <h3 id="productModalTitle" class="font-display font-bold text-lg text-white">Create New Product</h3>
+          <p class="text-xs text-slate-400">Manual stock creation with live storefront sync</p>
+        </div>
+        <button onclick="closeProductModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm">✕</button>
+      </div>
+
+      <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-4 pt-4">
+        <input type="hidden" id="editProductId" value="" />
+
+        <!-- Product Name -->
+        <div>
+          <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1.5">Product Title / Name *</label>
+          <input id="formProdName" type="text" class="neon-input text-sm" placeholder="e.g. Synthesized Spirulina Tofu Cube" required />
+        </div>
+
+        <!-- Category & Price -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1.5">Category *</label>
+            <select id="formProdCategory" class="neon-input text-sm" required>
+              <option value="">Select Category...</option>
+              <option value="Hydroponics">🌱 Hydroponics</option>
+              <option value="Synthesized Proteins">🧬 Synthesized Proteins</option>
+              <option value="Orbital Dairy">🥛 Orbital Dairy</option>
+              <option value="Zero-G Pantry">🌾 Zero-G Pantry</option>
+              <option value="Beverages & Elixirs">⚡ Beverages & Elixirs</option>
+              <option value="Snacks & Rations">🍿 Snacks & Rations</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1.5">Price (₹ INR) *</label>
+            <input id="formProdPrice" type="number" min="1" step="1" class="neon-input text-sm" placeholder="e.g. 145" required />
+          </div>
+        </div>
+
+        <!-- Unit Size & Stock Status -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1.5">Pack / Unit Specification</label>
+            <input id="formProdUnit" type="text" class="neon-input text-sm" placeholder="e.g. 350 g pod / 1 Litre" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1.5">Stock Status *</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="setStockStatusChoice('In Stock')" id="stChoice-In" class="status-seg-btn active-in">In Stock</button>
+              <button type="button" onclick="setStockStatusChoice('Low Stock')" id="stChoice-Low" class="status-seg-btn">Low Stock</button>
+              <button type="button" onclick="setStockStatusChoice('Out of Stock')" id="stChoice-Out" class="status-seg-btn">Out of Stock</button>
+            </div>
+            <input type="hidden" id="formProdStockStatus" value="In Stock" />
+          </div>
+        </div>
+
+        <!-- Image Upload Field (File upload OR Image URL) -->
+        <div>
+          <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1.5">Product Image (Upload or URL)</label>
+          <div class="flex items-center gap-2 mb-2">
+            <button type="button" onclick="switchImageMode('url')" id="imgMode-url" class="px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">🔗 Image URL</button>
+            <button type="button" onclick="switchImageMode('file')" id="imgMode-file" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">📁 File Upload</button>
+          </div>
+
+          <!-- URL Input -->
+          <div id="imgUrlWrapper">
+            <input id="formProdImageUrl" type="url" oninput="handleImageUrlInput()" class="neon-input text-sm" placeholder="https://images.unsplash.com/... or paste link" />
+          </div>
+
+          <!-- File Upload Input -->
+          <div id="imgFileWrapper" class="hidden">
+            <label class="block border-2 border-dashed border-cyan-500/30 hover:border-cyan-400 rounded-xl p-4 text-center cursor-pointer bg-slate-900/50 transition-colors">
+              <span class="text-2xl mb-1 block">📸</span>
+              <span class="text-xs text-slate-300 font-medium">Click to upload photo from your device</span>
+              <input id="formProdImageFile" type="file" accept="image/*" onchange="handleImageFileUpload(event)" class="hidden" />
+            </label>
+          </div>
+
+          <!-- Live Image Preview Card -->
+          <div id="imgPreviewCard" class="mt-3 flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+            <img id="formImagePreview" src="https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300&q=80" alt="Preview" class="w-16 h-16 rounded-lg object-cover border border-cyan-500/30" />
+            <div class="text-xs">
+              <div class="text-cyan-300 font-medium">Image Live Preview</div>
+              <div id="imgPreviewLabel" class="text-slate-400 text-[11px] truncate max-w-[240px]">Default product visual</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Error Notice -->
+        <div id="formErrorNotice" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs"></div>
+
+        <!-- Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeProductModal()" class="btn-ghost text-xs">Cancel</button>
+          <button id="formSubmitBtn" type="submit" class="btn-cyan text-xs">
+            <span>⚡ Save & Sync Product</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       4. SUPABASE CLOUD DATABASE SYNC MODAL
+  ══════════════════════════════════════════════════════ -->
+  <div id="cloudDbModal" class="modal-overlay hidden">
+    <div class="modal-content p-5 sm:p-7 max-w-md">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">⚡</div>
+          <div>
+            <h3 class="font-display font-bold text-base text-white">Supabase Cloud Sync</h3>
+            <p class="text-xs text-slate-400">Live multi-device database synchronization</p>
+          </div>
+        </div>
+        <button onclick="closeCloudDbModal()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">✕</button>
+      </div>
+
+      <div class="py-4 space-y-4">
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-slate-400">Current Status:</span>
+            <span id="modalCloudStatusBadge" class="font-bold text-slate-400">Local Only</span>
+          </div>
+          <div class="text-[11px] text-slate-400">
+            By default, orders sync across all browser tabs via <span class="text-cyan-400 font-mono">BroadcastChannel</span>. Connect Supabase to sync live orders across Chrome, mobile devices, or separate computers.
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">Supabase Project URL</label>
+          <input type="url" id="cloudDbUrl" class="neon-input text-xs" placeholder="https://your-project.supabase.co" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">Supabase Anon Key</label>
+          <input type="password" id="cloudDbKey" class="neon-input text-xs font-mono" placeholder="eyJhbGciOiJIUzI1NiIsIn..." />
+        </div>
+
+        <div class="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-[11px] text-cyan-200">
+          <strong>Database Table:</strong> Confirmed customer orders insert into the <code class="bg-black/60 px-1 py-0.5 rounded text-white font-mono">orders</code> table with fields:
+          <div class="font-mono text-[10px] text-cyan-300 mt-1">customer_name, phone_number, pickup_pin, status, time_slot</div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <button type="button" onclick="disconnectCloudDb()" class="text-xs text-rose-400 hover:underline">
+            Reset to Local DB
+          </button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeCloudDbModal()" class="btn-ghost text-xs">Close</button>
+            <button type="button" onclick="saveCloudDbSettings()" class="btn-cyan text-xs">
+              Save &amp; Connect
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       JAVASCRIPT APPLICATION LOGIC
+  ══════════════════════════════════════════════════════ -->
+  <script>
+    // ── App State ──────────────────────────────────────────────────────────
+    let currentAdminSession = null;
+    let activeTab = 'products';
+    let activeCategoryFilter = 'All';
+    let activeOrderStatusFilter = 'All';
+    let keypadPinValue = '';
+    let uploadedImageBase64 = '';
+    let currentImageMode = 'url';
+    let chosenStockStatus = 'In Stock';
+
+    // ── Boot Sequence & Route Guard ────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAdminSession();
+
+      if (window.AURA_DB) {
+        // Listen for live updates across customer & admin tabs
+        AURA_DB.onSync((event) => {
+          if (event.type === 'PRODUCTS_UPDATED') {
+            loadProductsData();
+            showToast('Catalog updated in real time', 'info');
+          } else if (event.type === 'ORDERS_UPDATED') {
+            loadOrdersData();
+            if (event.payload && event.payload.action === 'NEW_ORDER') {
+              const o = event.payload.order;
+              showToast(`🔔 New Order ${o.pickupCode} received from ${o.customerName}!`, 'success');
+              playOrderNotificationSound();
+            }
+          }
+        });
+      }
+    });
+
+    function checkAdminSession() {
+      if (!window.AURA_DB) return;
+      currentAdminSession = AURA_DB.getAdminSession();
+
+      if (currentAdminSession) {
+        // Authenticated: show mobile dashboard
+        document.getElementById('authGate').classList.add('hidden');
+        document.getElementById('adminApp').classList.remove('hidden');
+        document.getElementById('adminEmailBadge').textContent = currentAdminSession.gmail;
+        loadDashboardData();
+        updateCloudStatusUI();
+      } else {
+        // Unauthenticated: show gate
+        document.getElementById('authGate').classList.remove('hidden');
+        document.getElementById('adminApp').classList.add('hidden');
+      }
+    }
+
+    // ── Supabase Cloud Database Helpers ─────────────────────────────────────
+    function updateCloudStatusUI() {
+      if (!window.AURA_DB) return;
+      const cfg = AURA_DB.getCloudConfig();
+      const dot = document.getElementById('cloudStatusDot');
+      const txt = document.getElementById('cloudStatusText');
+      const badge = document.getElementById('modalCloudStatusBadge');
+
+      if (cfg.isConnected) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        if (txt) txt.textContent = 'Cloud DB Live';
+        if (badge) {
+          badge.textContent = 'Connected (Supabase)';
+          badge.className = 'font-bold text-emerald-400 font-mono';
+        }
+      } else {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        if (txt) txt.textContent = 'Local DB';
+        if (badge) {
+          badge.textContent = 'Local / Cross-Tab';
+          badge.className = 'font-bold text-slate-400 font-mono';
+        }
+      }
+    }
+
+    function openCloudDbModal() {
+      const cfg = AURA_DB.getCloudConfig();
+      document.getElementById('cloudDbUrl').value = cfg.url || '';
+      document.getElementById('cloudDbKey').value = '';
+      updateCloudStatusUI();
+      document.getElementById('cloudDbModal').classList.remove('hidden');
+    }
+
+    function closeCloudDbModal() {
+      document.getElementById('cloudDbModal').classList.add('hidden');
+    }
+
+    function saveCloudDbSettings() {
+      const url = document.getElementById('cloudDbUrl').value.trim();
+      const key = document.getElementById('cloudDbKey').value.trim();
+
+      if (!url || !key) {
+        showToast('Please provide both Project URL and Anon Key', 'error');
+        return;
+      }
+
+      AURA_DB.setCloudConfig(url, key);
+      showToast('⚡ Supabase credentials saved! Reloading to establish cloud link...', 'success');
+      setTimeout(() => window.location.reload(), 1200);
+    }
+
+    function disconnectCloudDb() {
+      if (confirm('Disconnect from Supabase and use local browser sync?')) {
+        AURA_DB.setCloudConfig('', '');
+        showToast('Reset to local synchronization', 'info');
+        setTimeout(() => window.location.reload(), 800);
+      }
+    }
+
+    // ── Authentication Handling ────────────────────────────────────────────
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass  = document.getElementById('loginPassword').value.trim();
+      const errBox = document.getElementById('authError');
+      const errTxt = document.getElementById('authErrorMsg');
+      const btn    = document.getElementById('authBtn');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span>Verifying Security Key...</span>';
+
+      setTimeout(() => {
+        const res = AURA_DB.adminLogin(email, pass);
+        if (res.success) {
+          errBox.classList.add('hidden');
+          showToast('✓ Terminal unlocked. Welcome, Commander!', 'success');
+          checkAdminSession();
+        } else {
+          errTxt.textContent = res.message || 'Access denied.';
+          errBox.classList.remove('hidden');
+          showToast('⛔ Invalid credentials.', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<span>Unlock Admin Terminal</span><span class="text-base">→</span>';
+        }
+      }, 500);
+    }
+
+    function autoFillDevCredentials() {
+      document.getElementById('loginEmail').value = 'amalkppdm07@gmail.com';
+      document.getElementById('loginPassword').value = 'Amal@Store2025';
+      showToast('🔑 Dev credentials auto-filled', 'info');
+    }
+
+    function handleAdminLogout() {
+      if (confirm('Disconnect from AURA Command?')) {
+        AURA_DB.adminLogout();
+        currentAdminSession = null;
+        showToast('Logged out of Admin Terminal', 'info');
+        checkAdminSession();
+      }
+    }
+
+    // ── Tab Navigation ─────────────────────────────────────────────────────
+    function switchTab(tab) {
+      activeTab = tab;
+      const tabs = ['products', 'orders', 'verify'];
+      tabs.forEach(t => {
+        const viewEl = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const deskBtn = document.getElementById(`tabBtn-${t}`);
+        const mobBtn  = document.getElementById(`mTab-${t}`);
+
+        if (t === tab) {
+          viewEl.classList.remove('hidden');
+          if (deskBtn) {
+            deskBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 transition-all';
+          }
+          if (mobBtn) {
+            mobBtn.className = 'flex flex-col items-center gap-1 p-1 text-cyan-300';
+          }
+        } else {
+          viewEl.classList.add('hidden');
+          if (deskBtn) {
+            deskBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all';
+          }
+          if (mobBtn) {
+            mobBtn.className = 'flex flex-col items-center gap-1 p-1 text-slate-400';
+          }
+        }
+      });
+
+      if (tab === 'orders') renderOrdersFeed();
+      if (tab === 'products') renderProductsTable();
+    }
+
+    // ── Data Loading & Stats ───────────────────────────────────────────────
+    function loadDashboardData() {
+      loadProductsData();
+      loadOrdersData();
+    }
+
+    function loadProductsData() {
+      const products = AURA_DB.getProducts();
+      document.getElementById('statTotalProducts').textContent = products.length;
+      document.getElementById('desktopProductsCount').textContent = products.length;
+      renderProductsTable();
+    }
+
+    function loadOrdersData() {
+      const orders = AURA_DB.getOrders();
+      const active = orders.filter(o => o.status !== 'Completed');
+      const completed = orders.filter(o => o.status === 'Completed');
+      const revenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+      document.getElementById('statActiveOrders').textContent = active.length;
+      document.getElementById('statCompletedOrders').textContent = completed.length;
+      document.getElementById('statTotalRevenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
+
+      document.getElementById('desktopOrdersCount').textContent = active.length;
+      const mBadge = document.getElementById('mobileOrdersBadge');
+      if (mBadge) {
+        mBadge.textContent = active.length;
+        mBadge.classList.toggle('hidden', active.length === 0);
+      }
+
+      renderOrdersFeed();
+    }
+
+    // ── Products View Logic ────────────────────────────────────────────────
+    function filterProductCategory(cat) {
+      activeCategoryFilter = cat;
+      const cats = ['All', 'Hydroponics', 'Synthesized Proteins', 'Orbital Dairy', 'Zero-G Pantry', 'Beverages & Elixirs', 'Snacks & Rations'];
+      cats.forEach(c => {
+        const btn = document.getElementById(`pCatBtn-${c}`);
+        if (!btn) return;
+        if (c === cat) {
+          btn.className = 'px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        } else {
+          btn.className = 'px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-900 text-slate-400 border border-slate-800 hover:text-white';
+        }
+      });
+      renderProductsTable();
+    }
+
+    function renderProductsTable() {
+      const search = (document.getElementById('productSearchInput')?.value || '').toLowerCase().trim();
+      let products = AURA_DB.getProducts();
+
+      if (activeCategoryFilter !== 'All') {
+        products = products.filter(p => p.category === activeCategoryFilter);
+      }
+      if (search) {
+        products = products.filter(p =>
+          p.name.toLowerCase().includes(search) ||
+          p.category.toLowerCase().includes(search)
+        );
+      }
+
+      const container = document.getElementById('productsContainer');
+      const emptyEl = document.getElementById('productsEmpty');
+
+      if (products.length === 0) {
+        container.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      container.innerHTML = products.map(p => {
+        const status = p.stockStatus || (p.inStock ? 'In Stock' : 'Out of Stock');
+        let statusBadge = '';
+        if (status === 'In Stock') {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">In Stock</span>';
+        } else if (status === 'Low Stock') {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">Low Stock</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">Out of Stock</span>';
+        }
+
+        const img = p.image || 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300&q=80';
+
+        return `
+          <div class="glass rounded-2xl p-3.5 sm:p-4 lev-card flex flex-col justify-between border border-slate-800 hover:border-cyan-500/40">
+            <div class="flex items-start gap-3 mb-3">
+              <img src="${img}" onerror="this.src='https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300&q=80'" alt="${escapeHtml(p.name)}" class="w-16 h-16 rounded-xl object-cover border border-cyan-500/20 bg-slate-800 shrink-0" />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-[10px] font-mono text-cyan-400 uppercase truncate">${escapeHtml(p.category)}</span>
+                  ${statusBadge}
+                </div>
+                <h4 class="font-display font-semibold text-sm text-white truncate" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h4>
+                <div class="text-xs text-slate-400 font-mono mt-0.5">${escapeHtml(p.unit || '1 unit')}</div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <div class="font-display font-bold text-lg text-white">₹${p.price}</div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="toggleProductStock('${p.id}')" class="btn-ghost text-xs py-1.5 px-2.5" title="Cycle stock state">
+                  🔄 Stock
+                </button>
+                <button onclick="openEditProductModal('${p.id}')" class="btn-ghost text-xs py-1.5 px-2.5">
+                  ✏️ Edit
+                </button>
+                <button onclick="deleteProductItem('${p.id}', '${escapeHtml(p.name)}')" class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-xs">
+                  🗑
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleProductStock(id) {
+      const p = AURA_DB.toggleStock(id);
+      if (p) {
+        showToast(`Stock updated: ${p.name} → ${p.stockStatus}`, 'info');
+        loadProductsData();
+      }
+    }
+
+    function deleteProductItem(id, name) {
+      if (confirm(`Remove "${name}" permanently from catalog?`)) {
+        AURA_DB.deleteProduct(id);
+        showToast(`Product deleted: ${name}`, 'info');
+        loadProductsData();
+      }
+    }
+
+    // ── Add / Edit Product Modal Logic ─────────────────────────────────────
+    function openAddProductModal() {
+      document.getElementById('productModalTitle').textContent = 'Create New Product';
+      document.getElementById('formSubmitBtn').innerHTML = '<span>⚡ Save & Sync Product</span>';
+      document.getElementById('editProductId').value = '';
+      document.getElementById('productForm').reset();
+      setStockStatusChoice('In Stock');
+      uploadedImageBase64 = '';
+      switchImageMode('url');
+      document.getElementById('formProdImageUrl').value = '';
+      document.getElementById('formImagePreview').src = 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300&q=80';
+      document.getElementById('imgPreviewLabel').textContent = 'Default sample preview';
+      document.getElementById('formErrorNotice').classList.add('hidden');
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function openEditProductModal(id) {
+      const p = AURA_DB.getProducts().find(x => x.id === id);
+      if (!p) return;
+
+      document.getElementById('productModalTitle').textContent = 'Edit Product';
+      document.getElementById('formSubmitBtn').innerHTML = '<span>💾 Update Product</span>';
+      document.getElementById('editProductId').value = p.id;
+      document.getElementById('formProdName').value = p.name;
+      document.getElementById('formProdCategory').value = p.category;
+      document.getElementById('formProdPrice').value = p.price;
+      document.getElementById('formProdUnit').value = p.unit || '';
+
+      const st = p.stockStatus || (p.inStock ? 'In Stock' : 'Out of Stock');
+      setStockStatusChoice(st);
+
+      if (p.image && p.image.startsWith('data:')) {
+        uploadedImageBase64 = p.image;
+        switchImageMode('file');
+        document.getElementById('formImagePreview').src = p.image;
+        document.getElementById('imgPreviewLabel').textContent = 'Uploaded file active';
+      } else {
+        document.getElementById('formProdImageUrl').value = p.image || '';
+        switchImageMode('url');
+        document.getElementById('formImagePreview').src = p.image || 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300&q=80';
+        document.getElementById('imgPreviewLabel').textContent = p.image ? 'Custom URL visual' : 'Default visual';
+      }
+
+      document.getElementById('formErrorNotice').classList.add('hidden');
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').classList.add('hidden');
+    }
+
+    function setStockStatusChoice(status) {
+      chosenStockStatus = status;
+      document.getElementById('formProdStockStatus').value = status;
+      const bIn = document.getElementById('stChoice-In');
+      const bLow = document.getElementById('stChoice-Low');
+      const bOut = document.getElementById('stChoice-Out');
+
+      bIn.className = 'status-seg-btn' + (status === 'In Stock' ? ' active-in' : '');
+      bLow.className = 'status-seg-btn' + (status === 'Low Stock' ? ' active-low' : '');
+      bOut.className = 'status-seg-btn' + (status === 'Out of Stock' ? ' active-out' : '');
+    }
+
+    function switchImageMode(mode) {
+      currentImageMode = mode;
+      const bUrl = document.getElementById('imgMode-url');
+      const bFile = document.getElementById('imgMode-file');
+      const wUrl = document.getElementById('imgUrlWrapper');
+      const wFile = document.getElementById('imgFileWrapper');
+
+      if (mode === 'url') {
+        bUrl.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        bFile.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800';
+        wUrl.classList.remove('hidden');
+        wFile.classList.add('hidden');
+      } else {
+        bFile.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        bUrl.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800';
+        wFile.classList.remove('hidden');
+        wUrl.classList.add('hidden');
+      }
+    }
+
+    function handleImageUrlInput() {
+      const url = document.getElementById('formProdImageUrl').value.trim();
+      if (url) {
+        document.getElementById('formImagePreview').src = url;
+        document.getElementById('imgPreviewLabel').textContent = 'URL image preview';
+      }
+    }
+
+    function handleImageFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        uploadedImageBase64 = evt.target.result;
+        document.getElementById('formImagePreview').src = uploadedImageBase64;
+        document.getElementById('imgPreviewLabel').textContent = file.name;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleProductSubmit(e) {
+      e.preventDefault();
+      const editId   = document.getElementById('editProductId').value;
+      const name     = document.getElementById('formProdName').value.trim();
+      const category = document.getElementById('formProdCategory').value;
+      const price    = document.getElementById('formProdPrice').value;
+      const unit     = document.getElementById('formProdUnit').value.trim();
+      const status   = chosenStockStatus;
+
+      let image = '';
+      if (currentImageMode === 'file' && uploadedImageBase64) {
+        image = uploadedImageBase64;
+      } else {
+        image = document.getElementById('formProdImageUrl').value.trim();
+      }
+
+      const errEl = document.getElementById('formErrorNotice');
+      errEl.classList.add('hidden');
+
+      if (!name) {
+        errEl.textContent = 'Product name is required.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (!category) {
+        errEl.textContent = 'Please choose a category.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (!price || Number(price) <= 0) {
+        errEl.textContent = 'Valid price in ₹ is required.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const payload = {
+        name,
+        category,
+        price: Number(price),
+        unit: unit || '1 unit',
+        stockStatus: status,
+        image
+      };
+
+      if (editId) {
+        AURA_DB.updateProduct(editId, payload);
+        showToast(`✓ Updated "${name}" & synced live!`, 'success');
+      } else {
+        const res = AURA_DB.addProduct(payload);
+        if (res.error) {
+          errEl.textContent = res.error;
+          errEl.classList.remove('hidden');
+          return;
+        }
+        showToast(`⚡ Created "${name}" & synced to storefront!`, 'success');
+      }
+
+      closeProductModal();
+      loadProductsData();
+    }
+
+    // ── Orders Feed Logic ──────────────────────────────────────────────────
+    function filterOrderStatus(status) {
+      activeOrderStatusFilter = status;
+      const statuses = ['All', 'Received', 'Packing', 'Ready for Pickup', 'Completed'];
+      statuses.forEach(s => {
+        const key = s === 'Ready for Pickup' ? 'Ready' : s;
+        const btn = document.getElementById(`ordStatus-${key}`);
+        if (!btn) return;
+        if (s === status) {
+          btn.className = 'px-3 py-1 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        } else {
+          btn.className = 'px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800';
+        }
+      });
+      renderOrdersFeed();
+    }
+
+    function renderOrdersFeed() {
+      let orders = AURA_DB.getOrders();
+      if (activeOrderStatusFilter !== 'All') {
+        orders = orders.filter(o => o.status === activeOrderStatusFilter);
+      }
+
+      const container = document.getElementById('ordersContainer');
+      const emptyEl = document.getElementById('ordersEmpty');
+
+      if (orders.length === 0) {
+        container.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      container.innerHTML = orders.map(o => {
+        const itemsList = (o.items || []).map(i => `
+          <div class="flex justify-between text-xs py-0.5 text-slate-300">
+            <span>${escapeHtml(i.name)} × ${i.quantity}</span>
+            <span class="font-mono">₹${i.subtotal || i.price * i.quantity}</span>
+          </div>
+        `).join('');
+
+        let statusClass = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30';
+        let actionBtn = '';
+
+        if (o.status === 'Received') {
+          statusClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40 animate-pulse';
+          actionBtn = `
+            <button onclick="advanceOrderStatus('${o.id}', 'Packing')" class="btn-cyan text-xs py-2 w-full">
+              <span>Advance to Packing 📦</span>
+            </button>`;
+        } else if (o.status === 'Packing') {
+          statusClass = 'bg-amber-500/15 text-amber-300 border-amber-500/40 animate-pulse';
+          actionBtn = `
+            <button onclick="advanceOrderStatus('${o.id}', 'Ready for Pickup')" class="btn-emerald text-xs py-2 w-full">
+              <span>Mark Ready for Pickup ⚡</span>
+            </button>`;
+        } else if (o.status === 'Ready for Pickup') {
+          statusClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 animate-pulse';
+          actionBtn = `
+            <button onclick="advanceOrderStatus('${o.id}', 'Completed')" class="btn-violet text-xs py-2 w-full">
+              <span>Confirm Handover & Complete ✓</span>
+            </button>`;
+        } else {
+          statusClass = 'bg-slate-800 text-slate-400 border-slate-700';
+          actionBtn = `<div class="text-xs text-center text-slate-500 py-1 font-mono">✓ Handed Over to Customer</div>`;
+        }
+
+        const dateStr = new Date(o.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        return `
+          <div class="glass rounded-2xl p-4 lev-card border border-slate-800 flex flex-col justify-between space-y-3.5">
+            <div>
+              <!-- Header info: Pickup Code & PIN -->
+              <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                <div>
+                  <div class="font-mono font-bold text-xl text-cyan-300 tracking-wider">${o.pickupCode || 'PK-???'}</div>
+                  <div class="text-[10px] font-mono text-slate-400">${o.id} · ${dateStr}</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] font-mono text-slate-400 uppercase">CONFIRMATION PIN</div>
+                  <div class="font-mono font-bold text-base text-amber-400 tracking-widest">${o.pin || '------'}</div>
+                </div>
+              </div>
+
+              <!-- Customer Info -->
+              <div class="grid grid-cols-2 gap-2 text-xs pt-2 text-slate-300">
+                <div>
+                  <span class="text-slate-500 block text-[10px] uppercase font-mono">Customer</span>
+                  <span class="font-semibold text-white">${escapeHtml(o.customerName || 'Cosmic Shopper')}</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block text-[10px] uppercase font-mono">Phone</span>
+                  <span>${escapeHtml(o.phone || 'N/A')}</span>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-slate-500 block text-[10px] uppercase font-mono">Pickup Slot</span>
+                  <span class="text-cyan-400 font-medium">${escapeHtml(o.pickupSlot || 'Instant Express')}</span>
+                </div>
+              </div>
+
+              <!-- Items List -->
+              <div class="mt-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                <div class="text-[10px] font-mono text-slate-400 uppercase mb-1">Queued Items (${(o.items || []).length})</div>
+                <div class="space-y-0.5 max-h-24 overflow-y-auto pr-1">
+                  ${itemsList}
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer: Total & Status Button -->
+            <div class="pt-2 border-t border-slate-800/80 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusClass}">${o.status}</span>
+                <span class="font-display font-bold text-lg text-white">₹${o.totalAmount}</span>
+              </div>
+              ${actionBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function advanceOrderStatus(orderId, nextStatus) {
+      const updated = AURA_DB.updateOrderStatus(orderId, nextStatus);
+      if (updated) {
+        showToast(`Order ${updated.pickupCode} updated to: ${nextStatus}`, 'success');
+        loadOrdersData();
+      }
+    }
+
+    // ── PIN Verification Keypad Tool ───────────────────────────────────────
+    function handleDirectPinInput(val) {
+      keypadPinValue = val.trim().replace(/\D/g, '');
+      const input = document.getElementById('pinDirectInput');
+      if (input && input.value !== keypadPinValue) input.value = keypadPinValue;
+      if (keypadPinValue.length === 6) {
+        executePinVerification();
+      }
+    }
+
+    function keypadPress(digit) {
+      if (keypadPinValue.length >= 6) return;
+      keypadPinValue += digit;
+      updatePinDisplay();
+      if (keypadPinValue.length === 6) {
+        // Auto trigger verification
+        executePinVerification();
+      }
+    }
+
+    function keypadBackspace() {
+      keypadPinValue = keypadPinValue.slice(0, -1);
+      updatePinDisplay();
+      document.getElementById('pinResultCard').classList.add('hidden');
+    }
+
+    function keypadClear() {
+      keypadPinValue = '';
+      updatePinDisplay();
+      document.getElementById('pinResultCard').classList.add('hidden');
+    }
+
+    function updatePinDisplay() {
+      const input = document.getElementById('pinDirectInput');
+      if (input) input.value = keypadPinValue;
+    }
+
+    function executePinVerification() {
+      const input = document.getElementById('pinDirectInput');
+      const pinToVerify = (input ? input.value : keypadPinValue).trim();
+      const card = document.getElementById('pinResultCard');
+      const res = AURA_DB.verifyPin(pinToVerify);
+
+      if (!res.success) {
+        showToast(res.message, 'error');
+        card.innerHTML = `
+          <div class="text-center py-4 text-rose-400">
+            <div class="text-3xl mb-1">❌</div>
+            <div class="font-semibold text-sm">${res.message}</div>
+            <p class="text-xs text-slate-400 mt-1">Please re-check the 6 digits on customer pass</p>
+          </div>
+        `;
+        card.className = 'mt-6 glass rounded-2xl p-6 border-2 border-rose-500/40';
+        card.classList.remove('hidden');
+        return;
+      }
+
+      const order = res.order;
+      const isDone = order.status === 'Completed';
+
+      card.className = `mt-6 glass rounded-2xl p-6 border-2 ${isDone ? 'border-slate-600' : 'border-emerald-500/60 glow-cyan'}`;
+      card.innerHTML = `
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <span class="text-xs font-mono text-emerald-400 font-bold">✓ VALID MATCH FOUND</span>
+            <h3 class="font-mono font-bold text-2xl text-white mt-0.5">${order.pickupCode}</h3>
+          </div>
+          <div class="text-right">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isDone ? 'bg-slate-700 text-slate-300' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse'}">
+              ${order.status}
+            </span>
+          </div>
+        </div>
+
+        <div class="py-3 text-xs space-y-1.5 text-slate-300">
+          <div><strong class="text-slate-400 font-mono">Customer:</strong> ${escapeHtml(order.customerName)} (${escapeHtml(order.phone || 'No phone')})</div>
+          <div><strong class="text-slate-400 font-mono">Time Slot:</strong> ${escapeHtml(order.pickupSlot)}</div>
+          <div><strong class="text-slate-400 font-mono">Total Paid:</strong> <span class="font-bold text-white text-sm">₹${order.totalAmount}</span></div>
+          <div class="pt-1 text-[11px] text-slate-400">
+            <strong>Items:</strong> ${(order.items || []).map(i => `${i.name} (x${i.quantity})`).join(', ')}
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800">
+          ${isDone ? `
+            <div class="text-xs text-center text-slate-400 font-mono py-2 bg-slate-900/50 rounded-xl">
+              ✓ Order was already handed over at ${new Date(order.completedAt || order.timestamp).toLocaleTimeString()}
+            </div>
+          ` : `
+            <button onclick="confirmHandoverByPin('${order.pin}')" class="btn-emerald w-full py-3 text-sm font-bold">
+              <span>🎉 Confirm Handover & Complete Order</span>
+            </button>
+          `}
+        </div>
+      `;
+      card.classList.remove('hidden');
+      showToast(`✓ Order ${order.pickupCode} validated!`, 'success');
+    }
+
+    function confirmHandoverByPin(pin) {
+      const res = AURA_DB.completeOrderByPin(pin);
+      if (res.success) {
+        showToast(res.message, 'success');
+        executePinVerification();
+        loadOrdersData();
+      } else {
+        showToast(res.message, 'error');
+      }
+    }
+
+    // ── Toast Utility ──────────────────────────────────────────────────────
+    function showToast(msg, type = 'info') {
+      const wrap = document.getElementById('toast-wrap');
+      const box = document.createElement('div');
+      box.className = 'toast-box';
+
+      let icon = 'ℹ️';
+      let border = 'border: 1px solid rgba(6, 182, 212, 0.4);';
+      if (type === 'success') {
+        icon = '✅';
+        border = 'border: 1px solid rgba(16, 185, 129, 0.5);';
+      } else if (type === 'error') {
+        icon = '⛔';
+        border = 'border: 1px solid rgba(244, 63, 94, 0.5);';
+      }
+
+      box.style = border;
+      box.innerHTML = `
+        <span class="text-lg">${icon}</span>
+        <div class="text-xs text-white font-medium flex-1">${escapeHtml(msg)}</div>
+      `;
+
+      wrap.appendChild(box);
+      setTimeout(() => {
+        box.style.opacity = '0';
+        box.style.transform = 'translateY(-10px)';
+        box.style.transition = 'all 0.3s ease';
+        setTimeout(() => box.remove(), 300);
+      }, 3500);
+    }
+
+    function playOrderNotificationSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } catch (e) {}
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
