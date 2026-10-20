@@ -768,16 +768,9 @@
                 <span style="color:#10B981;">in 15 Minutes.</span>
               </h1>
               
-              <p style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:20px;max-width:440px;">
+              <p style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:24px;max-width:440px;">
                 Browse fresh produce and groceries. Order ahead; pickup when notified.
               </p>
-
-              <!-- Promo Code FRESH10 Banner -->
-              <div style="display:inline-flex;align-items:center;gap:8px;background:#F0FDF4;border:1px dashed rgba(16,185,129,0.5);padding:6px 14px;border-radius:10px;margin-bottom:22px;cursor:pointer;" onclick="applyPromo('FRESH10')">
-                <span style="font-size:15px;">🏷️</span>
-                <span style="font-size:12px;color:#0F172A;font-weight:600;">Use Code <strong style="color:#047857;font-family:'JetBrains Mono',monospace;letter-spacing:1px;font-weight:800;">FRESH10</strong> for 10% OFF</span>
-                <span style="font-size:10px;color:#047857;background:rgba(16,185,129,0.18);padding:2px 6px;border-radius:6px;font-weight:700;">TAP TO APPLY</span>
-              </div>
 
               <!-- Action Buttons -->
               <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -1462,7 +1455,7 @@ function applyPromo(code) {
     const mPIn = document.getElementById('mPromoInput');
     if (mPIn) mPIn.value = 'FRESH10';
   } else {
-    showToast('Invalid promo code. Use FRESH10 for 10% off', 'error');
+    showToast('Invalid promo code.', 'error');
   }
 }
 
