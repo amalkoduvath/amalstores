@@ -1,0 +1,27 @@
+{
+  "name": "freshcart-backend",
+  "version": "1.0.0",
+  "description": "Node.js, Express, and MongoDB backend for FreshCart Zero-G Grocery",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node seed/seed.js"
+  },
+  "keywords": [
+    "freshcart",
+    "express",
+    "mongodb",
+    "mongoose",
+    "ecommerce",
+    "api"
+  ],
+  "author": "FreshCart Team",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
+  }
+}

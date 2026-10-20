@@ -353,13 +353,13 @@ const AURA_DB = (() => {
     },
 
     /**
-     * Places a new order with 6-digit confirmation PIN & Pickup Code
+     * Places a new order with 4-digit confirmation PIN & Pickup Code
      * Order status lifecycle: 'Received' → 'Packing' → 'Ready for Pickup' → 'Completed'
      */
     placeOrder(orderData) {
       const orders = this.getOrders();
       const pickupCode = 'PK-' + Math.floor(100 + Math.random() * 900);
-      const pin = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit secret PIN
+      const pin = orderData.pin || String(Math.floor(1000 + Math.random() * 9000)); // 4-digit secret PIN
 
       const newOrder = {
         id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
