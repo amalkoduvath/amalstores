@@ -13,14 +13,18 @@
   <script src="store.js"></script>
   <style>
     :root {
-      --bg:        #030914;
-      --card:      #081225;
-      --card2:     #0a1628;
-      --border:    rgba(0,216,246,0.12);
-      --border-hi: rgba(0,216,246,0.45);
-      --cyan:      #00D8F6;
-      --cyan-dim:  #005F73;
-      --sidebar-w: 220px;
+      --bg:          #0B0F17;
+      --card:        rgba(15, 23, 42, 0.75);
+      --card-white:  rgba(15, 23, 42, 0.75);
+      --card2:       #111B2E;
+      --border:      rgba(16, 185, 129, 0.2);
+      --border-hi:   rgba(16, 185, 129, 0.5);
+      --emerald:     #10B981;
+      --emerald-glow:#34D399;
+      --emerald-dark:#059669;
+      --dark-obsidian:#0B0F17;
+      --header-black:#0F172A;
+      --sidebar-w:   220px;
     }
 
     *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -28,17 +32,23 @@
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: var(--bg);
-      color: #c8d8e8;
+      color: #E2E8F0;
       min-height: 100vh;
       overflow-x: hidden;
+      background-image: 
+        linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-attachment: fixed;
     }
 
     /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #050d1a; }
-    ::-webkit-scrollbar-thumb { background: #0f2540; border-radius: 4px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0B0F17; }
+    ::-webkit-scrollbar-thumb { background: #112236; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--emerald-dark); }
 
     /* ── App shell ── */
     #app-shell {
@@ -52,7 +62,9 @@
     #topbar {
       grid-column: 1 / -1;
       grid-row: 1;
-      background: #040c1a;
+      background: rgba(12, 19, 34, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -67,7 +79,7 @@
     #sidebar {
       grid-column: 1;
       grid-row: 2;
-      background: var(--card);
+      background: #090F1C;
       border-right: 1px solid var(--border);
       position: sticky;
       top: 56px;
@@ -90,23 +102,23 @@
     /* ── Content + bag grid ── */
     #content-bag {
       display: grid;
-      grid-template-columns: 1fr 300px;
+      grid-template-columns: 1fr 310px;
       gap: 0;
       min-height: 100%;
     }
 
     #content-area { padding: 20px 20px 140px; }
-    #bag-panel    { border-left: 1px solid var(--border); background: var(--card); position: sticky; top: 0; height: calc(100vh - 56px); overflow-y: auto; }
+    #bag-panel    { border-left: 1px solid var(--border); background: #090F1C; position: sticky; top: 0; height: calc(100vh - 56px); overflow-y: auto; }
 
     /* ── Brand logo ── */
     .brand-logo {
       font-size: 22px;
       font-weight: 900;
       letter-spacing: -0.5px;
-      color: #fff;
+      color: #FFFFFF;
       white-space: nowrap;
     }
-    .brand-logo span { color: var(--cyan); }
+    .brand-logo span { color: var(--emerald); }
 
     /* ── Search bar ── */
     #search-wrap {
@@ -116,187 +128,173 @@
     }
     #search-wrap input {
       width: 100%;
-      background: #0b1929;
-      border: 1px solid var(--border);
+      background: #0F172A;
+      border: 1px solid rgba(16, 185, 129, 0.25);
       border-radius: 10px;
-      color: #e2edf8;
+      color: #F8FAFC;
       font-size: 13px;
       padding: 7px 36px 7px 36px;
       outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
     #search-wrap input:focus {
-      border-color: var(--cyan-dim);
-      box-shadow: 0 0 0 3px rgba(0,216,246,.08);
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
-    #search-wrap .s-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#4a7c99; pointer-events:none; }
-    #search-wrap .s-kbd  { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-family:'JetBrains Mono',monospace; font-size:10px; color:#2d5470; background:#0d1f35; padding:1px 5px; border-radius:4px; border:1px solid #1a3050; }
+    #search-wrap .s-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#64748B; pointer-events:none; }
+    #search-wrap .s-kbd  { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-family:'JetBrains Mono',monospace; font-size:10px; color:#64748B; background:#1E293B; padding:1px 5px; border-radius:4px; border:1px solid #334155; }
 
     /* ── Location pill ── */
     .location-pill {
-      display: flex; align-items: center; gap-6px;
-      background: #0b1929; border:1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+      background: #0F172A; border: 1px solid rgba(16, 185, 129, 0.28);
       border-radius: 9px; padding: 5px 10px;
-      font-size: 12px; color: #8fbcd4; white-space: nowrap;
+      font-size: 12px; color: #94A3B8; white-space: nowrap;
       cursor: pointer; user-select: none;
     }
 
     /* ── Sidebar nav ── */
     .nav-section-label {
-      font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-      color: #2d5470; padding: 10px 16px 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: #64748B; padding: 12px 16px 4px;
     }
     .nav-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px 16px; font-size: 13px; font-weight: 500;
-      color: #6a95b0; cursor: pointer; border-radius: 0;
+      padding: 9px 16px; font-size: 13px; font-weight: 500;
+      color: #94A3B8; cursor: pointer; border-radius: 0;
       transition: background .15s, color .15s;
       position: relative; user-select: none;
     }
-    .nav-item:hover { background: rgba(0,216,246,.04); color: #a8d4e8; }
+    .nav-item:hover { background: rgba(16, 185, 129, 0.08); color: #F1F5F9; }
     .nav-item.active {
-      color: var(--cyan);
-      background: rgba(0,216,246,.07);
+      color: var(--emerald);
+      background: rgba(16, 185, 129, 0.12);
+      font-weight: 600;
     }
     .nav-item.active::before {
       content: '';
       position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-      background: var(--cyan);
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
       border-radius: 0 3px 3px 0;
     }
     .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
 
-    /* ── Free delivery card ── */
-    .free-delivery-card {
-      margin: 12px 12px 0;
-      background: linear-gradient(135deg, #041825, #061e30);
-      border: 1px solid rgba(0,216,246,.2);
-      border-radius: 12px;
-      padding: 12px 14px;
-      text-align: center;
-    }
-
     /* ── Zero-G Anti-Gravity Hero Banner ── */
     .hero {
-      background: #070B14;
-      border: 1px solid rgba(0, 242, 254, 0.22);
+      background: radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.16) 0%, transparent 60%), #0B0F17;
+      border: 1px solid rgba(16, 185, 129, 0.28);
       border-radius: 20px;
-      padding: 36px 36px 40px;
+      padding: 38px 36px 42px;
       margin-bottom: 24px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.8), 0 0 35px -12px rgba(0, 242, 254, 0.2);
+      box-shadow: 0 18px 45px -12px rgba(0, 0, 0, 0.9), 0 0 40px -15px rgba(16, 185, 129, 0.25);
     }
-    /* Cybernetic grid overlay */
+    /* Cyber-Organic geometric grid overlay */
     .hero::before {
       content: '';
       position: absolute;
       inset: 0;
       background-image: 
-        linear-gradient(rgba(0, 242, 254, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79, 172, 254, 0.05) 1px, transparent 1px);
+        linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
       background-size: 28px 28px;
       background-position: center center;
-      mask-image: radial-gradient(circle at 60% 40%, rgba(0,0,0,1) 15%, rgba(0,0,0,0.1) 85%);
-      -webkit-mask-image: radial-gradient(circle at 60% 40%, rgba(0,0,0,1) 15%, rgba(0,0,0,0.1) 85%);
+      mask-image: radial-gradient(circle at 65% 45%, rgba(0,0,0,1) 25%, rgba(0,0,0,0.12) 80%);
+      -webkit-mask-image: radial-gradient(circle at 65% 45%, rgba(0,0,0,1) 25%, rgba(0,0,0,0.12) 80%);
       pointer-events: none;
       z-index: 0;
     }
-    /* Ambient neon glows */
+    /* Soft emerald ambient glow */
     .hero::after {
       content: '';
       position: absolute;
-      top: -30%;
-      right: 5%;
-      width: 380px;
-      height: 380px;
-      background: radial-gradient(circle, rgba(0, 242, 254, 0.16) 0%, rgba(79, 172, 254, 0.08) 45%, transparent 70%);
+      top: -25%;
+      right: 2%;
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.08) 50%, transparent 70%);
       border-radius: 50%;
       pointer-events: none;
-      filter: blur(40px);
+      filter: blur(48px);
       z-index: 0;
     }
 
-    /* Floating UI cards & Zero-G oscillation animations */
-    @keyframes floatZeroG1 {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-12px) rotate(0.8deg); }
-    }
-    @keyframes floatZeroG2 {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-16px) rotate(-1.2deg); }
-    }
-    @keyframes floatZeroG3 {
+    /* Floating produce pods: keyframes float */
+    @keyframes float {
       0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-9px); }
+      50% { transform: translateY(-10px); }
     }
 
     .zero-g-float-1 {
-      animation: floatZeroG1 5.8s ease-in-out infinite;
+      animation: float 4.8s ease-in-out infinite;
     }
     .zero-g-float-2 {
-      animation: floatZeroG2 7.2s ease-in-out infinite 0.9s;
+      animation: float 5.6s ease-in-out infinite 0.8s;
     }
     .zero-g-float-3 {
-      animation: floatZeroG3 6.4s ease-in-out infinite 1.8s;
+      animation: float 5.2s ease-in-out infinite 1.5s;
     }
 
     .hero-floating-card {
-      background: rgba(11, 20, 38, 0.78);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(0, 242, 254, 0.22);
-      border-radius: 14px;
-      box-shadow: 0 16px 32px rgba(3, 7, 18, 0.65), 0 0 20px -4px rgba(0, 242, 254, 0.18);
-      transition: border-color .3s, box-shadow .3s;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 24px -4px rgba(16, 185, 129, 0.22);
+      transition: border-color .3s, transform .3s, box-shadow .3s;
     }
     .hero-floating-card:hover {
-      border-color: rgba(0, 242, 254, 0.55);
-      box-shadow: 0 20px 40px rgba(3, 7, 18, 0.8), 0 0 28px rgba(0, 242, 254, 0.35);
+      border-color: rgba(16, 185, 129, 0.75);
+      box-shadow: 0 22px 44px rgba(0, 0, 0, 0.85), 0 0 32px rgba(16, 185, 129, 0.45);
     }
 
     /* Glowing badge pills */
-    .glow-pill-cyan {
+    .glow-pill-emerald {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      background: rgba(0, 242, 254, 0.09);
-      border: 1px solid rgba(0, 242, 254, 0.45);
-      color: #00F2FE;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.55);
+      color: #10B981;
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
+      font-weight: 800;
+      letter-spacing: 0.9px;
       text-transform: uppercase;
-      padding: 5px 13px;
+      padding: 5px 14px;
       border-radius: 9999px;
-      box-shadow: 0 0 16px -2px rgba(0, 242, 254, 0.32);
+      box-shadow: 0 0 18px -2px rgba(16, 185, 129, 0.4);
     }
-    .glow-pill-violet {
+    .glow-pill-obsidian {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      background: rgba(79, 172, 254, 0.1);
-      border: 1px solid rgba(79, 172, 254, 0.42);
-      color: #79beff;
+      background: #0B0F17;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #FFFFFF;
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.7px;
       text-transform: uppercase;
       padding: 5px 13px;
       border-radius: 9999px;
-      box-shadow: 0 0 16px -2px rgba(79, 172, 254, 0.28);
+      box-shadow: 0 0 16px -2px rgba(7, 11, 20, 0.8), 0 0 8px rgba(16, 185, 129, 0.2);
     }
 
     /* ── Section heading ── */
     .section-heading {
-      font-size: 13px; font-weight: 700; color: #d0e8f4;
+      font-size: 14px; font-weight: 800; color: #FFFFFF;
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 14px;
+      letter-spacing: -0.2px;
     }
     .section-heading::before {
       content: '';
-      width: 3px; height: 14px;
-      background: var(--cyan);
+      width: 4px; height: 16px;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
       border-radius: 2px;
     }
 
@@ -308,149 +306,183 @@
       margin-bottom: 28px;
     }
     .cat-tile {
-      background: var(--card2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(16, 185, 129, 0.18);
+      border-radius: 14px;
       padding: 14px 10px 12px;
       text-align: center;
       cursor: pointer;
-      transition: border-color .2s, background .2s, transform .2s;
+      transition: border-color .2s, background .2s, transform .2s, box-shadow .2s;
       user-select: none;
     }
-    .cat-tile:hover { border-color: var(--border-hi); background: #0c1e38; transform: translateY(-2px); }
-    .cat-tile.active { border-color: var(--cyan); background: rgba(0,216,246,.06); }
-    .cat-tile .tile-icon { font-size: 22px; margin-bottom: 7px; }
-    .cat-tile .tile-label { font-size: 10px; font-weight: 600; color: #7ab0cc; line-height: 1.3; }
-    .cat-tile.active .tile-label { color: var(--cyan); }
+    .cat-tile:hover { 
+      border-color: rgba(16, 185, 129, 0.6); 
+      background: rgba(17, 28, 48, 0.85); 
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.25);
+    }
+    .cat-tile.active { 
+      border-color: var(--emerald); 
+      background: rgba(16, 185, 129, 0.12); 
+      box-shadow: 0 0 18px -2px rgba(16, 185, 129, 0.35);
+    }
+    .cat-tile .tile-icon { font-size: 24px; margin-bottom: 7px; }
+    .cat-tile .tile-label { font-size: 11px; font-weight: 600; color: #94A3B8; line-height: 1.3; }
+    .cat-tile.active .tile-label { color: var(--emerald); font-weight: 700; }
 
-    /* ── Product card ── */
+    /* ── Product Card (Floating Glassmorphism Pod with Dark Translucent Background & Anti-Gravity Halo) ── */
     .product-card {
-      background: var(--card2);
-      border: 1px solid var(--border);
-      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(16, 185, 129, 0.22);
+      border-radius: 16px;
       overflow: hidden;
-      transition: border-color .2s, transform .25s, box-shadow .25s;
+      transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .3s cubic-bezier(0.16, 1, 0.3, 1), border-color .3s;
       display: flex; flex-direction: column;
+      box-shadow: 0 10px 25px -8px rgba(0, 0, 0, 0.6), 0 0 16px -4px rgba(16, 185, 129, 0.12);
     }
     .product-card:hover {
-      border-color: rgba(0,216,246,.35);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 28px -8px rgba(0,0,0,.6), 0 0 18px -4px rgba(0,216,246,.12);
+      border-color: rgba(16, 185, 129, 0.6);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.8), 0 0 30px 2px rgba(16, 185, 129, 0.35);
     }
     .product-card .card-img {
-      width: 100%; height: 140px; object-fit: cover;
-      background: #091422;
+      width: 100%; height: 145px; object-fit: cover;
+      background: #0B0F17;
       display: block;
     }
-    .card-body { padding: 12px 13px 13px; flex: 1; display: flex; flex-direction: column; }
-    .card-name { font-size: 12.5px; font-weight: 600; color: #d8eaf6; line-height: 1.4; margin-bottom: 3px; }
-    .card-unit { font-size: 10.5px; color: #3e6882; font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
+    .card-body { padding: 14px 14px 15px; flex: 1; display: flex; flex-direction: column; background: transparent; }
+    .card-name { font-size: 13.5px; font-weight: 700; color: #FFFFFF; line-height: 1.35; margin-bottom: 4px; }
+    .card-unit { font-size: 11px; color: #94A3B8; font-family: 'JetBrains Mono', monospace; font-weight: 500; margin-bottom: 12px; }
     .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-    .card-price { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #e8f4ff; }
-    .card-price .mrp { font-size: 10px; text-decoration: line-through; color: #2d5470; margin-left: 4px; font-weight: 400; }
+    .card-price { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 16px; color: #34D399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.25); }
+    .card-price .mrp { font-size: 11px; text-decoration: line-through; color: #64748B; margin-left: 5px; font-weight: 400; text-shadow: none; }
 
     /* Discount badge */
     .discount-badge {
-      position: absolute; top: 8px; left: 8px;
-      background: rgba(255,80,80,.85); color: #fff;
-      font-size: 9px; font-weight: 700; padding: 2px 6px;
-      border-radius: 20px; letter-spacing: .03em;
+      position: absolute; top: 10px; left: 10px;
+      background: #EF4444; color: #FFFFFF;
+      font-size: 10px; font-weight: 800; padding: 2px 7px;
+      border-radius: 20px; letter-spacing: .02em;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
     }
     .stock-badge {
-      position: absolute; top: 8px; right: 8px;
-      font-size: 9px; font-weight: 700; padding: 2px 7px;
+      position: absolute; top: 10px; right: 10px;
+      font-size: 9.5px; font-weight: 800; padding: 3px 8px;
       border-radius: 20px;
     }
-    .stock-in  { background: rgba(0,200,110,.15); color: #0dc875; border: 1px solid rgba(0,200,110,.3); }
-    .stock-low { background: rgba(255,170,0,.12); color: #ffc040; border: 1px solid rgba(255,170,0,.3); }
-    .stock-out { background: rgba(255,60,60,.1);  color: #ff6060; border: 1px solid rgba(255,60,60,.25); }
+    .stock-in  { background: rgba(16, 185, 129, 0.9); color: #FFFFFF; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); }
+    .stock-low { background: rgba(245, 158, 11, 0.9); color: #FFFFFF; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); }
+    .stock-out { background: rgba(100, 116, 139, 0.9); color: #FFFFFF; }
 
-    /* ── Buttons ── */
-    .btn-cyan {
-      background: var(--cyan);
-      color: #020c18;
+    /* ── Buttons (Sleek dark obsidian and green border styling) ── */
+    .btn-emerald {
+      background: #0B0F17;
+      color: #34D399;
+      border: 1.5px solid #10B981;
       font-weight: 700;
-      border: none;
-      border-radius: 9px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: opacity .18s, transform .15s, box-shadow .18s;
+      transition: all .2s;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
     }
-    .btn-cyan:hover { opacity: .88; box-shadow: 0 0 20px rgba(0,216,246,.35); transform: translateY(-1px); }
+    .btn-emerald:hover { 
+      background: #10B981; 
+      color: #0B0F17; 
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.5); 
+      transform: translateY(-2px); 
+    }
+    .btn-emerald:active { transform: scale(.97); }
+
+    .btn-cyan {
+      background: #0B0F17;
+      color: #34D399;
+      border: 1.5px solid #10B981;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+    }
+    .btn-cyan:hover { 
+      background: #10B981; 
+      color: #0B0F17; 
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.5); 
+      transform: translateY(-2px); 
+    }
     .btn-cyan:active { transform: scale(.97); }
 
     .btn-outline-cyan {
-      background: transparent;
-      color: var(--cyan);
-      border: 1px solid rgba(0,216,246,.5);
-      font-weight: 600;
-      border-radius: 9px;
-      cursor: pointer;
-      transition: background .15s, box-shadow .18s;
-    }
-    .btn-outline-cyan:hover { background: rgba(0,216,246,.07); box-shadow: 0 0 14px rgba(0,216,246,.2); }
-
-    .btn-emerald {
-      background: #00c46a;
-      color: #020c18;
+      background: rgba(11, 15, 23, 0.7);
+      color: #E2E8F0;
+      border: 1.5px solid rgba(16, 185, 129, 0.45);
       font-weight: 700;
-      border: none;
-      border-radius: 9px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: opacity .18s, transform .15s;
+      transition: background .15s, border-color .15s, box-shadow .18s, transform .15s, color .15s;
     }
-    .btn-emerald:hover { opacity: .85; transform: translateY(-1px); }
+    .btn-outline-cyan:hover { 
+      background: rgba(16, 185, 129, 0.15); 
+      border-color: #10B981; 
+      color: #34D399;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.3);
+      transform: translateY(-2px);
+    }
 
-    /* ── qty controls ── */
+    /* ── Qty controls ── */
     .qty-ctrl {
-      display: flex; align-items: center; gap: 2px;
-      background: #0b1929; border: 1px solid rgba(0,216,246,.35);
-      border-radius: 9px; padding: 2px 4px;
+      display: flex; align-items: center; gap: 3px;
+      background: #0B0F17; border: 1.5px solid rgba(16, 185, 129, 0.45);
+      border-radius: 10px; padding: 2px 5px;
     }
     .qty-btn {
       width: 24px; height: 24px;
-      background: #112236; color: var(--cyan);
-      border: none; border-radius: 7px;
-      font-size: 14px; font-weight: 700;
+      background: rgba(15, 23, 42, 0.9); color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 7px;
+      font-size: 14px; font-weight: 800;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: background .15s;
+      transition: background .15s, color .15s;
     }
-    .qty-btn:hover { background: #1a3550; }
-    .qty-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e8f4ff; padding: 0 5px; }
+    .qty-btn:hover { background: #10B981; color: #0B0F17; }
+    .qty-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 800; color: #FFFFFF; padding: 0 6px; }
 
     /* ── Bag panel ── */
     .bag-header { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
-    .bag-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid rgba(0,216,246,.05); }
-    .bag-item img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; background: #091422; border: 1px solid #0f2540; flex-shrink: 0; }
+    .bag-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid rgba(16, 185, 129, 0.08); }
+    .bag-item img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: #FFFFFF; border: 1px solid rgba(16, 185, 129, 0.2); flex-shrink: 0; }
     .bag-footer { padding: 14px 14px 18px; border-top: 1px solid var(--border); }
     .bag-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 7px; }
-    .bag-row .label { color: #4a7c99; }
-    .bag-row .val   { color: #c0daf0; font-weight: 600; }
+    .bag-row .label { color: #94A3B8; }
+    .bag-row .val   { color: #F1F5F9; font-weight: 600; }
     .bag-row.total-row { padding-top: 10px; border-top: 1px solid var(--border); margin-top: 6px; }
-    .bag-row.total-row .label { color: #a0c8e0; font-weight: 700; font-size: 13px; }
-    .bag-row.total-row .val   { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
+    .bag-row.total-row .label { color: #E2E8F0; font-weight: 700; font-size: 13.5px; }
+    .bag-row.total-row .val   { color: var(--emerald); font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 800; }
 
     /* ── Products grid ── */
     #productGrid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-      gap: 14px;
+      gap: 16px;
     }
 
     /* ── OTP digit inputs ── */
     .otp-digit {
       width: 52px; height: 58px; text-align: center;
       font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
-      background: #050f1e; border: 2px solid rgba(0,216,246,.25);
-      color: var(--cyan); border-radius: 12px; outline: none;
+      background: #0F172A; border: 2px solid rgba(16, 185, 129, 0.35);
+      color: var(--emerald); border-radius: 12px; outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
-    .otp-digit:focus { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,216,246,.4); }
+    .otp-digit:focus { border-color: var(--emerald); box-shadow: 0 0 14px rgba(16, 185, 129, 0.4); }
 
     /* ── Modal backdrop ── */
     .modal-backdrop {
       position: fixed; inset: 0;
-      background: rgba(2,8,18,.88);
-      backdrop-filter: blur(8px);
+      background: rgba(7, 11, 20, 0.9);
+      backdrop-filter: blur(10px);
       z-index: 80;
       display: flex; align-items: center; justify-content: center;
       padding: 16px;
@@ -459,38 +491,38 @@
     }
     .modal-backdrop.open { opacity: 1; pointer-events: all; }
     .modal-box {
-      background: var(--card);
-      border: 1px solid rgba(0,216,246,.35);
+      background: #0C1322;
+      border: 1px solid rgba(16, 185, 129, 0.35);
       border-radius: 20px;
       padding: 24px;
       width: 100%; max-width: 440px;
       max-height: 92vh; overflow-y: auto;
-      box-shadow: 0 20px 60px -10px rgba(0,0,0,.9), 0 0 40px rgba(0,216,246,.1);
+      box-shadow: 0 20px 60px -10px rgba(0,0,0,.95), 0 0 35px rgba(16, 185, 129, 0.15);
     }
 
     /* ── Toast ── */
     #toast {
       position: fixed; bottom: 24px; right: 24px; z-index: 100;
-      background: #0a1e35; border: 1px solid rgba(0,216,246,.35);
+      background: #0F172A; border: 1px solid rgba(16, 185, 129, 0.4);
       border-radius: 12px; padding: 11px 18px;
-      font-size: 12.5px; color: #c8e4f4;
+      font-size: 13px; color: #F1F5F9; font-weight: 500;
       display: flex; align-items: center; gap: 10px;
-      box-shadow: 0 8px 28px -6px rgba(0,0,0,.7);
+      box-shadow: 0 10px 30px -6px rgba(0,0,0,.8), 0 0 16px rgba(16, 185, 129, 0.25);
       transform: translateY(18px); opacity: 0;
       pointer-events: none;
       transition: opacity .25s, transform .25s;
     }
     #toast.show { transform: translateY(0); opacity: 1; }
 
-    /* ── Bottom tracker bar — now anchored inside scroll, never overlapping cards ── */
+    /* ── Bottom tracker bar ── */
     #trackerBar {
       display: none;
-      margin: 0 0 14px 0;
-      background: linear-gradient(90deg, #04111f, #061828);
-      border: 1px solid rgba(0,216,246,.4);
-      border-radius: 13px; padding: 10px 14px;
+      margin: 0 0 16px 0;
+      background: linear-gradient(90deg, #091220, #0D1C2E);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 14px; padding: 12px 16px;
       align-items: center; justify-content: space-between; gap: 12px;
-      box-shadow: 0 0 22px -4px rgba(0,216,246,.15);
+      box-shadow: 0 0 24px -4px rgba(16, 185, 129, 0.2);
     }
     #trackerBar.show { display: flex; }
 
@@ -672,101 +704,124 @@
           </div>
         </div>
 
-        <!-- HERO BANNER (Zero-G Anti-Gravity Theme) -->
+        <!-- HERO BANNER (Zero-G Anti-Gravity Showcase) -->
         <div class="hero">
-          <div style="position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;align-items:center;">
+          <div style="position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:center;">
             
             <!-- Left Column: Copy & CTAs -->
             <div>
-              <!-- Glowing pill badges -->
+              <!-- Glowing pill badges: ZERO-G VAULT, EXPRESS PICKUP, WEIGHTLESS -->
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-                <span class="glow-pill-cyan">
-                  <span style="width:6px;height:6px;background:#00F2FE;border-radius:50%;display:inline-block;box-shadow:0 0 8px #00F2FE;"></span>
-                  ZERO-G
+                <span class="glow-pill-emerald">
+                  <span style="width:6px;height:6px;background:#10B981;border-radius:50%;display:inline-block;box-shadow:0 0 10px #10B981;animation:ping 1.2s infinite;"></span>
+                  ZERO-G VAULT
                 </span>
-                <span class="glow-pill-violet">
-                  <span style="width:6px;height:6px;background:#4FACFE;border-radius:50%;display:inline-block;box-shadow:0 0 8px #4FACFE;"></span>
-                  Express Pickup
+                <span class="glow-pill-obsidian">
+                  <span style="width:6px;height:6px;background:#10B981;border-radius:50%;display:inline-block;"></span>
+                  EXPRESS PICKUP
                 </span>
-                <span style="font-size:11.5px;color:#79beff;font-family:'JetBrains Mono',monospace;font-weight:600;">
-                  · 15-Min Assembly
+                <span class="glow-pill-obsidian" style="border-color:rgba(52,211,153,0.35);color:#34D399;">
+                  <span style="width:6px;height:6px;background:#34D399;border-radius:50%;display:inline-block;box-shadow:0 0 8px #34D399;"></span>
+                  WEIGHTLESS
+                </span>
+                <span style="font-size:11.5px;color:#34D399;font-family:'JetBrains Mono',monospace;font-weight:700;">
+                  · ~15 Min Counter Ready
                 </span>
               </div>
 
-              <!-- High Contrast White Headings with Cyan/Violet accents -->
-              <h1 style="font-size:32px;font-weight:900;color:#FFFFFF;line-height:1.18;margin-bottom:12px;letter-spacing:-.6px;">
-                Zero-G Fresh Foods,<br>
-                <span style="background:linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Weightless Collection.</span>
+              <!-- High Contrast White Headings with Emerald accents -->
+              <h1 style="font-size:34px;font-weight:900;color:#FFFFFF;line-height:1.18;margin-bottom:12px;letter-spacing:-.8px;">
+                Order Online &amp; Collect In-Store<br>
+                <span style="color:#10B981;text-shadow:0 0 24px rgba(16,185,129,0.35);">in 15 Minutes.</span>
               </h1>
               
-              <p style="font-size:13.5px;color:#8fa7be;line-height:1.6;margin-bottom:20px;max-width:440px;">
-                Step into the anti-gravity fresh food matrix. Pure hydroponics, orbital dairy &amp; cold-pressed elixirs prepared in advance for touch-free counter express pickup.
+              <p style="font-size:14px;color:#94A3B8;line-height:1.6;margin-bottom:20px;max-width:440px;">
+                Browse fresh produce and groceries. Order ahead; pickup when notified.
               </p>
+
+              <!-- Promo Code FRESH10 Banner -->
+              <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.08);border:1px dashed rgba(16,185,129,0.45);padding:6px 14px;border-radius:10px;margin-bottom:22px;cursor:pointer;" onclick="applyPromo('FRESH10')">
+                <span style="font-size:15px;">🏷️</span>
+                <span style="font-size:12px;color:#F1F5F9;font-weight:600;">Use Code <strong style="color:#10B981;font-family:'JetBrains Mono',monospace;letter-spacing:1px;font-weight:800;">FRESH10</strong> for 10% OFF</span>
+                <span style="font-size:10px;color:#10B981;background:rgba(16,185,129,0.2);padding:2px 6px;border-radius:6px;font-weight:700;">TAP TO APPLY</span>
+              </div>
 
               <!-- Action Buttons -->
               <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                <button onclick="filterCat('All')" class="btn-cyan" style="padding:10px 24px;font-size:13px;background:linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%);color:#040e1f;font-weight:800;border:none;box-shadow:0 0 20px rgba(0,242,254,0.35);">
-                  Shop Orbital Catalog →
+                <button onclick="filterCat('All')" class="btn-emerald" style="padding:11px 24px;font-size:13.5px;font-weight:800;">
+                  Shop Zero-G Produce →
                 </button>
-                <button onclick="openPassModal()" class="btn-outline-cyan" style="padding:10px 20px;font-size:13px;border-color:rgba(79,172,254,0.45);color:#79beff;">
+                <button onclick="openPassModal()" class="btn-outline-cyan" style="padding:11px 20px;font-size:13.5px;">
                   View Pickup Pass
                 </button>
               </div>
 
               <!-- Bottom Feature Badges -->
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:22px;">
-                <span style="font-size:11px;padding:4px 11px;background:rgba(8,18,37,0.7);border:1px solid rgba(0,242,254,0.18);border-radius:20px;color:#7ab0cc;">
+                <span style="font-size:11px;padding:4px 11px;background:#0F172A;border:1px solid rgba(16,185,129,0.22);border-radius:20px;color:#94A3B8;">
                   ⚡ 15-Min Vault Assembly
                 </span>
-                <span style="font-size:11px;padding:4px 11px;background:rgba(8,18,37,0.7);border:1px solid rgba(0,242,254,0.18);border-radius:20px;color:#7ab0cc;">
+                <span style="font-size:11px;padding:4px 11px;background:#0F172A;border:1px solid rgba(16,185,129,0.22);border-radius:20px;color:#94A3B8;">
                   🔐 6-Digit Counter PIN
                 </span>
-                <span style="font-size:11px;padding:4px 11px;background:rgba(8,18,37,0.7);border:1px solid rgba(0,242,254,0.18);border-radius:20px;color:#7ab0cc;">
-                  🆓 ₹0 Pickup Charge
+                <span style="font-size:11px;padding:4px 11px;background:#0F172A;border:1px solid rgba(16,185,129,0.22);border-radius:20px;color:#94A3B8;">
+                  🆓 ₹0 In-Store Collection
                 </span>
               </div>
             </div>
 
-            <!-- Right Column: Floating UI Cards (Anti-Gravity Oscillation) -->
-            <div class="hidden md:flex flex-col gap-3 relative" style="min-height:220px;justify-content:center;">
+            <!-- Right Column: Anti-Gravity Produce Showcase (Tomatoes, Bananas, Milk) -->
+            <div class="hidden md:flex flex-col gap-3 relative" style="min-height:260px;justify-content:center;">
               
-              <!-- Floating Card 1: Live Pod Status -->
-              <div class="hero-floating-card zero-g-float-1" style="padding:14px 18px;max-width:270px;margin-left:auto;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                  <span style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#00F2FE;font-weight:800;">
-                    Anti-Gravity Bay
+              <!-- Floating Item 1: Vine Tomatoes -->
+              <div class="hero-floating-card zero-g-float-1" style="padding:12px 18px;max-width:280px;margin-left:auto;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <span style="font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:#10B981;font-weight:800;">
+                    ZERO-G POD #1
                   </span>
-                  <span style="width:7px;height:7px;background:#00F2FE;border-radius:50%;box-shadow:0 0 10px #00F2FE;animation:ping 1.2s infinite;"></span>
+                  <span style="width:7px;height:7px;background:#10B981;border-radius:50%;box-shadow:0 0 10px #10B981;animation:ping 1.2s infinite;"></span>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <span style="font-size:24px;">🥗</span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:44px;height:44px;border-radius:12px;background:rgba(15,23,42,0.9);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+                    🍅
+                  </div>
                   <div>
-                    <div style="font-size:12.5px;font-weight:700;color:#fff;">Hydroponic Greens</div>
-                    <div style="font-size:10.5px;color:#7ab0cc;font-family:'JetBrains Mono',monospace;">Vault A-04 · Packed</div>
+                    <div style="font-size:13px;font-weight:700;color:#FFFFFF;">Vine Ripe Tomatoes</div>
+                    <div style="font-size:11px;color:#34D399;font-family:'JetBrains Mono',monospace;font-weight:600;">₹45 / 500g · Floating Vault</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Floating Card 2: 6-Digit Pass Preview -->
-              <div class="hero-floating-card zero-g-float-2" style="padding:14px 18px;max-width:290px;margin-left:20px;">
+              <!-- Floating Item 2: Fresh Bananas -->
+              <div class="hero-floating-card zero-g-float-2" style="padding:12px 18px;max-width:300px;margin-left:14px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                  <div style="font-size:10px;letter-spacing:0.8px;color:#4FACFE;font-weight:700;">EXPRESS PASS CODE</div>
-                  <span style="font-size:9.5px;background:rgba(0,242,254,0.12);color:#00F2FE;border:1px solid rgba(0,242,254,0.3);border-radius:6px;padding:2px 6px;font-family:'JetBrains Mono',monospace;">VERIFIED</span>
+                  <span style="font-size:9.5px;letter-spacing:0.8px;color:#FBBF24;font-weight:800;">ZERO-G POD #2</span>
+                  <span style="font-size:9.5px;background:rgba(16,185,129,0.15);color:#10B981;border:1px solid rgba(16,185,129,0.35);border-radius:6px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-weight:700;">WEIGHTLESS</span>
                 </div>
-                <div style="display:flex;align-items:baseline;justify-content:space-between;">
-                  <span style="font-size:20px;font-weight:900;color:#FFFFFF;letter-spacing:3px;font-family:'JetBrains Mono',monospace;text-shadow:0 0 12px rgba(0,242,254,0.4);">
-                    748 219
-                  </span>
-                  <span style="font-size:11px;color:#0dc875;font-weight:700;">Ready in ~12m</span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:44px;height:44px;border-radius:12px;background:rgba(15,23,42,0.9);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+                    🍌
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:#FFFFFF;">Robusta Organic Bananas</div>
+                    <div style="font-size:11px;color:#34D399;font-family:'JetBrains Mono',monospace;font-weight:600;">₹55 / 1kg · Vacuum Sealed</div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Floating Card 3: Weightless Pill Status -->
-              <div class="hero-floating-card zero-g-float-3" style="padding:10px 14px;max-width:240px;margin-left:auto;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:18px;">🛸</span>
-                  <div style="font-size:11px;color:#d0e8f4;font-weight:600;">
-                    Gravitational Buffer: <span style="color:#00F2FE;font-weight:800;">0.00 G</span>
+              <!-- Floating Item 3: Pure Whole Milk -->
+              <div class="hero-floating-card zero-g-float-3" style="padding:12px 18px;max-width:270px;margin-left:auto;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <span style="font-size:9.5px;letter-spacing:0.8px;color:#60A5FA;font-weight:800;">ZERO-G POD #3</span>
+                  <span style="font-size:9.5px;color:#10B981;font-weight:700;">4°C Chilled</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:44px;height:44px;border-radius:12px;background:rgba(15,23,42,0.9);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+                    🥛
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:#FFFFFF;">Farm Fresh Milk</div>
+                    <div style="font-size:11px;color:#34D399;font-family:'JetBrains Mono',monospace;font-weight:600;">₹32 / 500ml · Anti-G Pouch</div>
                   </div>
                 </div>
               </div>
@@ -832,19 +887,33 @@
         <!-- Bag footer -->
         <div id="cartFooter" style="display:none;">
           <div class="bag-footer">
+            <!-- Promo Code Input in Bag -->
+            <div style="margin-bottom:12px;padding:8px 10px;background:#070B14;border:1px solid rgba(16,185,129,0.25);border-radius:10px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="text" id="promoInput" placeholder="Promo code (e.g. FRESH10)" 
+                       style="flex:1;background:transparent;border:none;outline:none;font-size:11px;font-family:'JetBrains Mono',monospace;color:#F8FAFC;text-transform:uppercase;"/>
+                <button type="button" onclick="applyPromoInput()" style="background:#10B981;color:#FFFFFF;border:none;border-radius:6px;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;">APPLY</button>
+              </div>
+              <div id="promoFeedback" style="display:none;font-size:10px;margin-top:4px;font-weight:600;"></div>
+            </div>
+
             <div class="bag-row">
               <span class="label">Items Subtotal</span>
               <span id="cartSubtotalLabel" class="val">₹0</span>
             </div>
+            <div id="promoDiscountRow" class="bag-row" style="display:none;">
+              <span class="label" style="color:#10B981;">Discount (FRESH10)</span>
+              <span id="cartDiscountLabel" class="val" style="color:#10B981;font-weight:700;">-₹0</span>
+            </div>
             <div class="bag-row">
               <span class="label">In-Store Collection</span>
-              <span class="val" style="color:#0dc875;font-weight:700;">FREE (₹0)</span>
+              <span class="val" style="color:#10B981;font-weight:700;">FREE (₹0)</span>
             </div>
             <div class="bag-row total-row">
               <span class="label">Total Amount</span>
               <span id="cartTotalLabel" class="val">₹0</span>
             </div>
-            <div style="font-size:10px;color:#4a7c99;margin-top:6px;display:flex;align-items:center;gap:4px;">
+            <div style="font-size:10px;color:#94A3B8;margin-top:6px;display:flex;align-items:center;gap:4px;">
               <span>⚡</span>
               <span>Express Counter Collection · Free In-Store Pickup</span>
             </div>
@@ -883,8 +952,19 @@
   </div>
   <div id="mBagFooter" style="display:none;border-top:1px solid var(--border);">
     <div class="bag-footer">
+      <!-- Promo Code Input in Mobile Drawer -->
+      <div style="margin-bottom:12px;padding:8px 10px;background:#070B14;border:1px solid rgba(16,185,129,0.25);border-radius:10px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="text" id="mPromoInput" placeholder="Promo code (e.g. FRESH10)" 
+                 style="flex:1;background:transparent;border:none;outline:none;font-size:11px;font-family:'JetBrains Mono',monospace;color:#F8FAFC;text-transform:uppercase;"/>
+          <button type="button" onclick="applyMobilePromoInput()" style="background:#10B981;color:#FFFFFF;border:none;border-radius:6px;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;">APPLY</button>
+        </div>
+        <div id="mPromoFeedback" style="display:none;font-size:10px;margin-top:4px;font-weight:600;"></div>
+      </div>
+
       <div class="bag-row"><span class="label">Items Subtotal</span><span id="mBagSubtotal" class="val">₹0</span></div>
-      <div class="bag-row"><span class="label">In-Store Collection</span><span class="val" style="color:#0dc875;font-weight:700;">FREE (₹0)</span></div>
+      <div id="mPromoDiscountRow" class="bag-row" style="display:none;"><span class="label" style="color:#10B981;">Discount (FRESH10)</span><span id="mBagDiscount" class="val" style="color:#10B981;font-weight:700;">-₹0</span></div>
+      <div class="bag-row"><span class="label">In-Store Collection</span><span class="val" style="color:#10B981;font-weight:700;">FREE (₹0)</span></div>
       <div class="bag-row total-row"><span class="label">Total Amount</span><span id="mBagTotal" class="val">₹0</span></div>
       <button onclick="closeMobileBag();openCheckoutOnboarding()"
               class="btn-cyan" style="width:100%;padding:11px;font-size:13px;margin-top:12px;border-radius:10px;">
@@ -1162,6 +1242,12 @@ function init() {
 
   loadProducts();
   renderCategoryTiles();
+  if (appliedPromo) {
+    const pIn = document.getElementById('promoInput');
+    if (pIn) pIn.value = appliedPromo;
+    const mPIn = document.getElementById('mPromoInput');
+    if (mPIn) mPIn.value = appliedPromo;
+  }
   updateCartUI();
   checkActiveOrder();
 
@@ -1328,6 +1414,35 @@ function saveCart() {
 }
 
 
+// ── Promo Code System ────────────────────────────────────────────────
+let appliedPromo = localStorage.getItem('freshcart_promo') || '';
+
+function applyPromo(code) {
+  const c = (code || '').trim().toUpperCase();
+  if (c === 'FRESH10') {
+    appliedPromo = 'FRESH10';
+    localStorage.setItem('freshcart_promo', 'FRESH10');
+    showToast('🎉 Promo code FRESH10 applied! 10% discount added.');
+    updateCartUI();
+    const pIn = document.getElementById('promoInput');
+    if (pIn) pIn.value = 'FRESH10';
+    const mPIn = document.getElementById('mPromoInput');
+    if (mPIn) mPIn.value = 'FRESH10';
+  } else {
+    showToast('Invalid promo code. Use FRESH10 for 10% off', 'error');
+  }
+}
+
+function applyPromoInput() {
+  const val = (document.getElementById('promoInput').value || '').trim().toUpperCase();
+  applyPromo(val);
+}
+
+function applyMobilePromoInput() {
+  const val = (document.getElementById('mPromoInput').value || '').trim().toUpperCase();
+  applyPromo(val);
+}
+
 function cartTotals() {
   let subtotal = 0, count = 0;
   Object.entries(cart).forEach(([id, qty]) => {
@@ -1335,15 +1450,18 @@ function cartTotals() {
     if (p) { subtotal += p.price * qty; count += qty; }
   });
 
-  // In-Store Pickup model: Free collection (₹0 delivery fee), ₹0 handling
   const deliveryFee = 0;
-  const total = subtotal;
+  let discount = 0;
+  if (appliedPromo === 'FRESH10' && subtotal > 0) {
+    discount = Math.round(subtotal * 0.10);
+  }
+  const total = Math.max(0, subtotal - discount);
 
-  return { subtotal, total, count, deliveryFee };
+  return { subtotal, discount, total, count, deliveryFee };
 }
 
 function updateCartUI() {
-  const { subtotal, total, count } = cartTotals();
+  const { subtotal, discount, total, count } = cartTotals();
   const $ = id => document.getElementById(id);
 
   $('cartBadge').textContent       = count;
@@ -1371,29 +1489,38 @@ function updateCartUI() {
         <div class="bag-item">
           <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#c8e4f4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
-            <div style="font-size:10px;color:#2d5470;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = ₹${p.price * qty}</div>
+            <div style="font-size:12px;font-weight:700;color:#F1F5F9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = <span style="color:#10B981;font-weight:700;">₹${p.price * qty}</span></div>
           </div>
           <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-            <div class="qty-ctrl" style="border-radius:7px;">
+            <div class="qty-ctrl" style="border-radius:8px;">
               <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',-1)">−</button>
               <span class="qty-num" style="font-size:10px;">${qty}</span>
               <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',1)">+</button>
             </div>
-            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#1e3f5a;cursor:pointer;font-size:13px;padding:2px;">✕</button>
+            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:13px;padding:2px;">✕</button>
           </div>
         </div>`;
     }).join('');
 
     $('cartSubtotalLabel').textContent = `₹${subtotal}`;
+    const discRow = $('promoDiscountRow');
+    if (discRow) {
+      if (discount > 0) {
+        discRow.style.display = 'flex';
+        $('cartDiscountLabel').textContent = `-₹${discount}`;
+      } else {
+        discRow.style.display = 'none';
+      }
+    }
     $('cartTotalLabel').textContent    = `₹${total}`;
   }
 
   // ── Mobile bag drawer ──
-  updateMobileBag(entries, count, subtotal, total);
+  updateMobileBag(entries, count, subtotal, discount, total);
 }
 
-function updateMobileBag(entries, count, subtotal, total) {
+function updateMobileBag(entries, count, subtotal, discount, total) {
   const $ = id => document.getElementById(id);
   const mItems   = $('mBagItems');
   const mEmpty   = $('mBagEmpty');
@@ -1413,20 +1540,29 @@ function updateMobileBag(entries, count, subtotal, total) {
         <div class="bag-item">
           <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#c8e4f4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
-            <div style="font-size:10px;color:#2d5470;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = ₹${p.price * qty}</div>
+            <div style="font-size:12px;font-weight:700;color:#F1F5F9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = <span style="color:#10B981;font-weight:700;">₹${p.price * qty}</span></div>
           </div>
           <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-            <div class="qty-ctrl" style="border-radius:7px;">
+            <div class="qty-ctrl" style="border-radius:8px;">
               <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',-1)">−</button>
               <span class="qty-num" style="font-size:10px;">${qty}</span>
               <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',1)">+</button>
             </div>
-            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#1e3f5a;cursor:pointer;font-size:13px;padding:2px;">✕</button>
+            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:13px;padding:2px;">✕</button>
           </div>
         </div>`;
     }).join('');
     $('mBagSubtotal').textContent = `₹${subtotal}`;
+    const mDiscRow = $('mPromoDiscountRow');
+    if (mDiscRow) {
+      if (discount > 0) {
+        mDiscRow.style.display = 'flex';
+        $('mBagDiscount').textContent = `-₹${discount}`;
+      } else {
+        mDiscRow.style.display = 'none';
+      }
+    }
     $('mBagTotal').textContent    = `₹${total}`;
   }
 }
@@ -1686,14 +1822,14 @@ function renderSvgQrCode(dataString) {
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       if (modules[r][c] === 1) {
-        rects += `<rect x="${c * scale}" y="${r * scale}" width="${scale}" height="${scale}" fill="#00D8F6"/>`;
+        rects += `<rect x="${c * scale}" y="${r * scale}" width="${scale}" height="${scale}" fill="#10B981"/>`;
       }
     }
   }
 
   const qrContainer = document.getElementById('qrCodeContainer');
   if (qrContainer) {
-    qrContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalPx}" height="${totalPx}"><rect width="${totalPx}" height="${totalPx}" fill="#030914"/>${rects}</svg>`;
+    qrContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalPx}" height="${totalPx}"><rect width="${totalPx}" height="${totalPx}" fill="#070B14"/>${rects}</svg>`;
   }
 }
 
@@ -1705,19 +1841,19 @@ function setPickupStatusUI(status) {
 
   if (status === 'Received') {
     badge.textContent = 'Received';
-    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,216,246,.12);color:var(--cyan);border:1px solid rgba(0,216,246,.3);animation:ping 1s infinite;';
-    if (desc) desc.textContent = 'Order logged. Store team is reviewing your item queue.';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.4);animation:ping 1.2s infinite;';
+    if (desc) desc.textContent = 'Order logged. Zero-G vault team is reviewing your item queue.';
   } else if (status === 'Packing') {
     badge.textContent = 'Assembling';
-    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,170,0,.15);color:#ffc040;border:1px solid rgba(255,170,0,.3);animation:ping 1s infinite;';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#FBBF24;border:1px solid rgba(245,158,11,.4);animation:ping 1.2s infinite;';
     if (desc) desc.textContent = 'Store staff is assembling your bag for express pickup.';
   } else if (status === 'Ready for Pickup') {
     badge.textContent = 'Ready for Pickup';
-    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,196,106,.15);color:#0dc875;border:1px solid rgba(0,196,106,.3);';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(16,185,129,.2);color:#34D399;border:1px solid rgba(16,185,129,.5);';
     if (desc) desc.textContent = '🎉 Bag packed! Walk up to Bay Counter & verify with your 6-digit PIN.';
   } else if (status === 'Completed') {
     badge.textContent = 'Collected ✓';
-    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:#0f2540;color:#7ab0cc;border:1px solid #1a3050;';
+    badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:#0F172A;color:#94A3B8;border:1px solid #1E293B;';
     if (desc) desc.textContent = '✓ Order handed over at counter. Thank you for collecting at FreshCart!';
   }
 }
