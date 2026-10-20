@@ -31,8 +31,9 @@
 
     html {
       scroll-behavior: smooth;
-      overflow-x: hidden;
-      max-width: 100vw;
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+      width: 100%;
     }
 
     body {
@@ -40,9 +41,10 @@
       background: var(--bg);
       color: var(--dark-charcoal);
       min-height: 100vh;
-      overflow-x: hidden;
-      max-width: 100vw;
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
       width: 100%;
+      position: relative;
       background-image: 
         linear-gradient(rgba(16, 185, 129, 0.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
@@ -172,6 +174,23 @@
     }
     #search-wrap .s-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#64748B; pointer-events:none; }
     #search-wrap .s-kbd  { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-family:'JetBrains Mono',monospace; font-size:10px; color:#64748B; background:#E2E8F0; padding:1px 5px; border-radius:4px; border:1px solid #CBD5E1; }
+    #searchClearBtn {
+      position: absolute;
+      right: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px 4px;
+      font-weight: 700;
+      display: none;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    #searchClearBtn:hover { color: #0F172A; }
 
     /* ── Location pill ── */
     .location-pill {
@@ -575,6 +594,9 @@
     /* ── Mobile overlay sidebar ── */
     #sidebar-overlay { display: none; }
 
+    /* ── Sticky Bottom Nav Defaults ── */
+    #bottom-nav { display: none; }
+
     /* ── Responsive ── */
     @media (max-width: 1100px) {
       #app-shell { grid-template-columns: 1fr; }
@@ -598,9 +620,141 @@
       #content-area { padding: 16px 14px 40px; }
     }
     @media (max-width: 768px) {
+      /* Enforce overflow-x hidden & full width bounds */
+      html, body, #app-shell, #topbar, #main-content, #content-bag, #content-area {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+      }
+
+      /* Hide non-essential header status pills on screens under 768px so logo and 'My Bag' button stay permanently on screen */
+      .location-pill,
+      .notif-bell,
+      #trackBtn,
+      #hamBtn,
+      .s-kbd {
+        display: none !important;
+      }
+
+      #topbar {
+        padding: 0 12px;
+        gap: 8px;
+        height: 54px;
+        justify-content: space-between;
+      }
+
+      .brand-logo {
+        font-size: 19px !important;
+        flex-shrink: 0 !important;
+      }
+
+      #search-wrap {
+        flex: 1;
+        min-width: 110px;
+        margin: 0 6px !important;
+      }
+
+      #search-wrap input {
+        font-size: 12px;
+        padding: 6px 26px 6px 28px;
+        border-radius: 8px;
+      }
+
+      #search-wrap .s-icon {
+        left: 8px;
+      }
+
+      #searchClearBtn {
+        right: 8px !important;
+      }
+
+      #topbar button[onclick="openMobileBag()"] {
+        flex-shrink: 0 !important;
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+        min-height: 36px !important;
+      }
+
+      /* Sticky Bottom Navigation Bar (position: fixed; bottom: 0) */
+      #bottom-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        height: 60px !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-top: 1px solid rgba(226, 232, 240, 0.95) !important;
+        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08) !important;
+        z-index: 68 !important;
+        align-items: center !important;
+        justify-content: space-around !important;
+        padding: 0 4px !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        box-sizing: border-box !important;
+      }
+
+      .bottom-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        padding: 6px 0;
+        cursor: pointer;
+        color: #64748B;
+        transition: color .15s, transform .15s;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .bottom-nav-item:active {
+        transform: scale(0.93);
+      }
+      .bottom-nav-item.active {
+        color: var(--emerald-dark);
+      }
+      .bottom-nav-item .bnav-icon {
+        font-size: 19px;
+        line-height: 1.1;
+        margin-bottom: 2px;
+      }
+      .bottom-nav-item .bnav-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: -0.1px;
+      }
+      .bottom-nav-item.active .bnav-label {
+        color: var(--emerald-dark);
+        font-weight: 800;
+      }
+      .bnav-badge {
+        position: absolute;
+        top: -4px;
+        right: -10px;
+        background: var(--emerald);
+        color: #FFFFFF;
+        font-size: 10px;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 1px 5px;
+        border-radius: 9999px;
+        min-width: 16px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+      }
+
+      /* Extra bottom padding on content-area so sticky bottom navigation doesn't hide products or buttons */
+      #content-area {
+        padding: 14px 12px 96px !important;
+      }
+
       .cat-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
       #productGrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-      .hero { padding: 22px 18px; }
+      .hero { padding: 20px 16px; margin-bottom: 18px; }
       .hero > div { grid-template-columns: 1fr !important; }
       .hero h1 { font-size: 22px !important; }
     }
@@ -608,6 +762,7 @@
       .cat-grid { grid-template-columns: repeat(2, 1fr); }
       #productGrid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
       .product-card .card-img { height: 125px; }
+      .hero { padding: 18px 14px; }
     }
   </style>
 </head>
@@ -621,7 +776,7 @@
   <!-- ── TOP BAR ──────────────────────────────────────── -->
   <header id="topbar">
     <!-- Hamburger (mobile) -->
-    <button id="hamBtn" onclick="toggleSidebar()" class="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#34D399] hover:text-white" style="background:rgba(15,23,42,0.8);border:1px solid rgba(16,185,129,0.3);font-size:18px;flex-shrink:0;">☰</button>
+    <button id="hamBtn" onclick="toggleSidebar()" class="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg" style="background:#F1F5F9;border:1px solid rgba(226,232,240,0.9);font-size:18px;flex-shrink:0;color:#0F172A;">☰</button>
 
     <!-- Brand -->
     <a href="index.html" class="brand-logo flex-shrink-0">Fresh<span>Cart</span></a>
@@ -638,8 +793,9 @@
       <span class="s-icon">
         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
       </span>
-      <input type="text" id="searchInput" placeholder="Search products… (press / to focus)"
+      <input type="text" id="searchInput" placeholder="Search products…"
              oninput="onSearch(this.value)" autocomplete="off"/>
+      <button type="button" id="searchClearBtn" onclick="clearSearch()" title="Clear search">✕</button>
       <span class="s-kbd hidden sm:block">/</span>
     </div>
 
@@ -652,7 +808,7 @@
     <!-- Active order badge -->
     <button id="trackBtn" onclick="openPassModal()"
             class="hidden items-center gap-2 text-xs font-mono font-bold px-3 py-1.5 rounded-lg"
-            style="background:rgba(16,185,129,.15);color:#34D399;border:1px solid rgba(16,185,129,.4);box-shadow:0 0 14px rgba(16,185,129,.25);">
+            style="background:rgba(16,185,129,.15);color:#047857;border:1px solid rgba(16,185,129,.4);box-shadow:0 0 14px rgba(16,185,129,.25);">
       <span style="width:7px;height:7px;background:#10B981;border-radius:50%;display:inline-block;animation:ping 1s infinite;"></span>
       <span id="trackBtnText">Active Pass</span>
     </button>
@@ -664,7 +820,7 @@
       🛒
       <span id="cartBadge" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:#10B981;">0</span>
       <span class="hidden sm:inline" style="font-size:11px;font-weight:700;color:#FFFFFF;">My Bag</span>
-      <span id="cartHeaderTotal" class="hidden sm:inline" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:#34D399;">₹0</span>
+      <span id="cartHeaderTotal" class="hidden sm:inline" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:#047857;">₹0</span>
     </button>
   </header>
 
@@ -913,23 +1069,9 @@
         <!-- Bag footer -->
         <div id="cartFooter" style="display:none;">
           <div class="bag-footer">
-            <!-- Promo Code Input in Bag -->
-            <div style="margin-bottom:12px;padding:8px 10px;background:#F8FAFC;border:1px solid rgba(16,185,129,0.3);border-radius:10px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <input type="text" id="promoInput" placeholder="Promo code (e.g. FRESH10)" 
-                       style="flex:1;background:transparent;border:none;outline:none;font-size:11px;font-family:'JetBrains Mono',monospace;color:#0F172A;text-transform:uppercase;"/>
-                <button type="button" onclick="applyPromoInput()" style="background:#10B981;color:#FFFFFF;border:none;border-radius:6px;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;">APPLY</button>
-              </div>
-              <div id="promoFeedback" style="display:none;font-size:10px;margin-top:4px;font-weight:600;"></div>
-            </div>
-
             <div class="bag-row">
               <span class="label">Items Subtotal</span>
               <span id="cartSubtotalLabel" class="val">₹0</span>
-            </div>
-            <div id="promoDiscountRow" class="bag-row" style="display:none;">
-              <span class="label" style="color:#10B981;">Discount (FRESH10)</span>
-              <span id="cartDiscountLabel" class="val" style="color:#10B981;font-weight:700;">-₹0</span>
             </div>
             <div class="bag-row">
               <span class="label">In-Store Collection</span>
@@ -978,18 +1120,7 @@
   </div>
   <div id="mBagFooter" style="display:none;border-top:1px solid #E2E8F0;">
     <div class="bag-footer">
-      <!-- Promo Code Input in Mobile Drawer -->
-      <div style="margin-bottom:12px;padding:8px 10px;background:#F8FAFC;border:1px solid rgba(16,185,129,0.3);border-radius:10px;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <input type="text" id="mPromoInput" placeholder="Promo code (e.g. FRESH10)" 
-                 style="flex:1;background:transparent;border:none;outline:none;font-size:11px;font-family:'JetBrains Mono',monospace;color:#0F172A;text-transform:uppercase;"/>
-          <button type="button" onclick="applyMobilePromoInput()" style="background:#10B981;color:#FFFFFF;border:none;border-radius:6px;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;">APPLY</button>
-        </div>
-        <div id="mPromoFeedback" style="display:none;font-size:10px;margin-top:4px;font-weight:600;"></div>
-      </div>
-
       <div class="bag-row"><span class="label">Items Subtotal</span><span id="mBagSubtotal" class="val">₹0</span></div>
-      <div id="mPromoDiscountRow" class="bag-row" style="display:none;"><span class="label" style="color:#10B981;">Discount (FRESH10)</span><span id="mBagDiscount" class="val" style="color:#10B981;font-weight:700;">-₹0</span></div>
       <div class="bag-row"><span class="label">In-Store Collection</span><span class="val" style="color:#10B981;font-weight:700;">FREE (₹0)</span></div>
       <div class="bag-row total-row"><span class="label">Total Amount</span><span id="mBagTotal" class="val">₹0</span></div>
       <button onclick="closeMobileBag();openCheckoutOnboarding()"
@@ -1215,6 +1346,31 @@
   <span id="toastMsg">Ready</span>
 </div>
 
+<!-- ════════════════════════════════════════════════════
+     STICKY BOTTOM NAVIGATION (MOBILE <768px)
+════════════════════════════════════════════════════ -->
+<nav id="bottom-nav">
+  <button type="button" class="bottom-nav-item active" id="bnav-home" onclick="navToHome()" aria-label="Home">
+    <span class="bnav-icon">🏠</span>
+    <span class="bnav-label">Home</span>
+  </button>
+  <button type="button" class="bottom-nav-item" id="bnav-cats" onclick="navToCategories()" aria-label="Categories">
+    <span class="bnav-icon">🏷️</span>
+    <span class="bnav-label">Categories</span>
+  </button>
+  <button type="button" class="bottom-nav-item" id="bnav-search" onclick="focusSearch()" aria-label="Search">
+    <span class="bnav-icon">🔍</span>
+    <span class="bnav-label">Search</span>
+  </button>
+  <button type="button" class="bottom-nav-item bottom-nav-bag" id="bnav-bag" onclick="openMobileBag()" aria-label="My Bag Cart">
+    <div style="position:relative;display:inline-block;">
+      <span class="bnav-icon">🛒</span>
+      <span id="bottomCartBadge" class="bnav-badge">0</span>
+    </div>
+    <span class="bnav-label">My Bag</span>
+  </button>
+</nav>
+
 
 <!-- ════════════════════════════════════════════════════
      STOREFRONT APPLICATION LOGIC
@@ -1258,7 +1414,7 @@ const CAT_LABELS = {
   'Snacks & Rations': 'Snacks\n& Branded'
 };
 
-const IMG_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect fill='%23050f1e' width='400' height='200'/%3E%3Ctext fill='%232d5470' font-size='40' text-anchor='middle' x='200' y='115'%3E📦%3C/text%3E%3C/svg%3E";
+const IMG_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect fill='%23F1F5F9' width='400' height='200'/%3E%3Ctext fill='%2394A3B8' font-size='40' text-anchor='middle' x='200' y='115'%3E📦%3C/text%3E%3C/svg%3E";
 
 // ── Boot ──────────────────────────────────────────────────────────────
 function init() {
@@ -1268,12 +1424,6 @@ function init() {
 
   loadProducts();
   renderCategoryTiles();
-  if (appliedPromo) {
-    const pIn = document.getElementById('promoInput');
-    if (pIn) pIn.value = appliedPromo;
-    const mPIn = document.getElementById('mPromoInput');
-    if (mPIn) mPIn.value = appliedPromo;
-  }
   updateCartUI();
   checkActiveOrder();
 
@@ -1317,7 +1467,7 @@ function renderCategoryTiles() {
       <div class="cat-tile ${isActive}" onclick="filterCat('${escapeHtml(cat)}');document.querySelectorAll('.cat-tile').forEach(t=>t.classList.remove('active'));this.classList.add('active')">
         <div class="tile-icon">${CAT_ICONS[cat] || '📦'}</div>
         <div class="tile-label">${label}</div>
-        <div style="font-size:9px;color:#1e3f5a;font-family:'JetBrains Mono',monospace;margin-top:3px;">${count} items</div>
+        <div style="font-size:9px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:3px;">${count} items</div>
       </div>`;
   }).join('');
 }
@@ -1335,12 +1485,16 @@ function filterCat(cat) {
 
 function onSearch(val) {
   searchQ = val.trim().toLowerCase();
+  const clearBtn = document.getElementById('searchClearBtn');
+  if (clearBtn) clearBtn.style.display = val.length > 0 ? 'block' : 'none';
   renderGrid();
 }
 
 function clearSearch() {
   searchQ = '';
   document.getElementById('searchInput').value = '';
+  const clearBtn = document.getElementById('searchClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
   renderGrid();
 }
 
@@ -1352,12 +1506,21 @@ function renderGrid() {
   const count = document.getElementById('searchCount');
 
   const filtered = products.filter(p => {
-    const matchCat = activeCat === 'All' || p.category === activeCat;
-    const matchQ   = !searchQ || p.name.toLowerCase().includes(searchQ) || p.category.toLowerCase().includes(searchQ);
-    return matchCat && matchQ;
+    if (!searchQ) {
+      return activeCat === 'All' || p.category === activeCat;
+    }
+    const qWords = searchQ.split(/\s+/).filter(Boolean);
+    const target = `${p.name || ''} ${p.category || ''} ${p.unit || ''}`.toLowerCase();
+    return qWords.every(word => target.includes(word));
   });
 
-  if (label) label.textContent = activeCat === 'All' ? 'All Products' : activeCat;
+  if (label) {
+    if (searchQ) {
+      label.textContent = `Search results for "${searchQ}"`;
+    } else {
+      label.textContent = activeCat === 'All' ? 'All Products' : activeCat;
+    }
+  }
   if (count) count.textContent = `${filtered.length} of ${products.length} items`;
 
   if (filtered.length === 0) {
@@ -1440,34 +1603,7 @@ function saveCart() {
 }
 
 
-// ── Promo Code System ────────────────────────────────────────────────
-let appliedPromo = localStorage.getItem('freshcart_promo') || '';
-
-function applyPromo(code) {
-  const c = (code || '').trim().toUpperCase();
-  if (c === 'FRESH10') {
-    appliedPromo = 'FRESH10';
-    localStorage.setItem('freshcart_promo', 'FRESH10');
-    showToast('🎉 Promo code FRESH10 applied! 10% discount added.');
-    updateCartUI();
-    const pIn = document.getElementById('promoInput');
-    if (pIn) pIn.value = 'FRESH10';
-    const mPIn = document.getElementById('mPromoInput');
-    if (mPIn) mPIn.value = 'FRESH10';
-  } else {
-    showToast('Invalid promo code.', 'error');
-  }
-}
-
-function applyPromoInput() {
-  const val = (document.getElementById('promoInput').value || '').trim().toUpperCase();
-  applyPromo(val);
-}
-
-function applyMobilePromoInput() {
-  const val = (document.getElementById('mPromoInput').value || '').trim().toUpperCase();
-  applyPromo(val);
-}
+// ── Cart Totals ──────────────────────────────────────────────────────
 
 function cartTotals() {
   let subtotal = 0, count = 0;
@@ -1477,11 +1613,8 @@ function cartTotals() {
   });
 
   const deliveryFee = 0;
-  let discount = 0;
-  if (appliedPromo === 'FRESH10' && subtotal > 0) {
-    discount = Math.round(subtotal * 0.10);
-  }
-  const total = Math.max(0, subtotal - discount);
+  const discount = 0;
+  const total = subtotal;
 
   return { subtotal, discount, total, count, deliveryFee };
 }
@@ -1491,6 +1624,8 @@ function updateCartUI() {
   const $ = id => document.getElementById(id);
 
   $('cartBadge').textContent       = count;
+  const bBadge = $('bottomCartBadge');
+  if (bBadge) bBadge.textContent = count;
   $('cartHeaderTotal').textContent = `₹${total}`;
   $('cartSubtitle').textContent    = `${count} item${count !== 1 ? 's' : ''} in your bag`;
 
@@ -1597,10 +1732,48 @@ function updateMobileBag(entries, count, subtotal, discount, total) {
 function openMobileBag() {
   document.getElementById('bagDrawer').style.transform = 'translateX(0)';
   document.getElementById('bagDrawerBackdrop').style.display = 'block';
+  updateBottomNavActive('bnav-bag');
 }
 function closeMobileBag() {
   document.getElementById('bagDrawer').style.transform = 'translateX(100%)';
   document.getElementById('bagDrawerBackdrop').style.display = 'none';
+  updateBottomNavActive('bnav-home');
+}
+
+// ── Mobile Bottom Navigation Bar Actions ─────────────────────────
+function updateBottomNavActive(activeId) {
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.id === activeId);
+  });
+}
+
+function navToHome() {
+  filterCat('All');
+  clearSearch();
+  const main = document.getElementById('main-content');
+  if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateBottomNavActive('bnav-home');
+}
+
+function navToCategories() {
+  const target = document.getElementById('catGrid') || document.querySelector('.section-heading');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  updateBottomNavActive('bnav-cats');
+}
+
+function focusSearch() {
+  const main = document.getElementById('main-content');
+  if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const input = document.getElementById('searchInput');
+  if (input) {
+    input.focus();
+    input.select();
+  }
+  updateBottomNavActive('bnav-search');
 }
 
 // ── Mobile Sidebar ─────────────────────────────────────────────────
