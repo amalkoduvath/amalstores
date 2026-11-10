@@ -1,0 +1,146 @@
+/**
+ * AMAL STORES - Admin Dashboard API Client & Helpers
+ * Handles backend REST API communication for the admin portal.
+ */
+
+const API_BASE_URL = 'http://localhost:5000/api';
+if (typeof window !== 'undefined') {
+  window.API_BASE_URL = API_BASE_URL;
+}
+
+// Cache for backend-fetched data
+let cachedApiProducts = null;
+let cachedApiOrders = null;
+let apiReachable = false;
+
+// ── API Helper: Fetch products from backend ───────────────────────────
+async function apiFetchProducts() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/products`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success && Array.isArray(json.data)) {
+      cachedApiProducts = json.data;
+      apiReachable = true;
+      console.log(`[Admin API] Loaded ${json.data.length} products from backend (${json.source})`);
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('[Admin API] Backend products unreachable, using localStorage:', err.message);
+    apiReachable = false;
+  }
+  return null;
+}
+
+// ── API Helper: Fetch orders from backend ─────────────────────────────
+async function apiFetchOrders() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/orders`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success && Array.isArray(json.data)) {
+      cachedApiOrders = json.data;
+      console.log(`[Admin API] Loaded ${json.data.length} orders from backend`);
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('[Admin API] Backend orders unreachable, using localStorage:', err.message);
+  }
+  return null;
+}
+
+// ── API Helper: Create product on backend ─────────────────────────────
+async function apiCreateProduct(payload) {
+  const targetUrl = `${window.API_BASE_URL || API_BASE_URL}/products`;
+  try {
+    const res = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success) {
+      console.log('[Admin API] Product created on backend:', json.data?.name || payload.name);
+      return json.data;
+    }
+  } catch (err) {
+    console.warn(`[Admin API] Failed to POST product to ${targetUrl}:`, err.message);
+  }
+  return null;
+}
+
+// ── API Helper: Update product on backend ─────────────────────────────
+async function apiUpdateProduct(id, payload) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success) {
+      console.log('[Admin API] Product updated on backend:', id);
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('[Admin API] Failed to PUT product on backend:', err.message);
+  }
+  return null;
+}
+
+// ── API Helper: Delete product on backend ─────────────────────────────
+async function apiDeleteProduct(id) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success) {
+      console.log('[Admin API] Product deleted on backend:', id);
+      return true;
+    }
+  } catch (err) {
+    console.warn('[Admin API] Failed to DELETE product on backend:', err.message);
+  }
+  return false;
+}
+
+// ── API Helper: Toggle stock on backend ───────────────────────────────
+async function apiToggleStock(id, newStockStatus) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stockStatus: newStockStatus }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success) return json.data;
+  } catch (err) {
+    console.warn('[Admin API] Failed to toggle stock on backend:', err.message);
+  }
+  return null;
+}
+
+// ── API Helper: Update order status on backend ────────────────────────
+async function apiUpdateOrderStatus(orderId, newStatus) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.success) {
+      console.log('[Admin API] Order status updated on backend:', orderId, '→', newStatus);
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('[Admin API] Failed to update order status on backend:', err.message);
+  }
+  return null;
+}

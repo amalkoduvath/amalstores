@@ -6,7 +6,7 @@ const Order = require('../models/Order');
 const { DEFAULT_PRODUCTS } = require('./defaultData');
 
 const seedDatabase = async () => {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freshcart';
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/freshcart';
 
   try {
     console.log(`Connecting to MongoDB at: ${uri}`);

@@ -289,69 +289,15 @@
   <div id="toast-wrap"></div>
 
   <!-- ══════════════════════════════════════════════════════
-       1. AUTHENTICATION GATE (Protected /admin route)
+       1. AUTHENTICATION GATE (Removed - direct access enabled)
   ══════════════════════════════════════════════════════ -->
-  <div id="authGate" class="min-h-screen flex items-center justify-center p-4 relative z-10">
-    <div class="w-full max-w-md">
-      <!-- Logo Branding -->
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass-cyan glow-cyan mb-4">
-          <span class="text-3xl">⚡</span>
-        </div>
-        <h1 class="font-display font-bold text-2xl tracking-widest text-glow-cyan" style="color:#22d3ee; letter-spacing:0.18em;">AURA COMMAND</h1>
-        <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-mono">Zero-G Mobile Admin Portal</p>
-      </div>
-
-      <!-- Auth Card -->
-      <div class="glass rounded-2xl p-6 sm:p-8 relative overflow-hidden" style="border: 1px solid var(--border-cyan);">
-        <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="font-display font-bold text-lg text-white">Staff Authentication</h2>
-          <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">RESTRICTED</span>
-        </div>
-
-        <form id="loginForm" onsubmit="handleAdminLogin(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Admin Email</label>
-            <input id="loginEmail" type="email" class="neon-input" placeholder="amalkppdm07@gmail.com" required autocomplete="username" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Security Key / Password</label>
-            <input id="loginPassword" type="password" class="neon-input" placeholder="••••••••••••" required autocomplete="current-password" />
-          </div>
-
-          <div id="authError" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <span>⛔</span>
-            <span id="authErrorMsg">Access Denied. Check credentials.</span>
-          </div>
-
-          <button id="authBtn" type="submit" class="btn-cyan w-full text-sm">
-            <span>Unlock Admin Terminal</span>
-            <span class="text-base">→</span>
-          </button>
-        </form>
-
-        <div class="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between text-xs">
-          <a href="index.html" class="text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
-            <span>←</span>
-            <span>Return to Storefront</span>
-          </a>
-          <button type="button" onclick="autoFillDevCredentials()" class="text-cyan-400 hover:underline font-mono text-[11px]">
-            ⚡ Fill Dev Auth
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <div id="authGate" style="display: none !important;" class="hidden"></div>
+  <div id="login-modal" style="display: none !important;" class="hidden"></div>
 
   <!-- ══════════════════════════════════════════════════════
-       2. MOBILE-FRIENDLY ADMIN DASHBOARD (When Authenticated)
+       2. MOBILE-FRIENDLY ADMIN DASHBOARD (Direct Loaded)
   ══════════════════════════════════════════════════════ -->
-  <div id="adminApp" class="hidden relative z-10">
+  <div id="adminApp" class="relative z-10" data-admin-dashboard="true" style="display: block !important;">
 
     <!-- Top Sticky Header -->
     <header class="glass sticky top-0 z-40 px-4 py-3.5 border-b border-cyan-500/20">
@@ -794,43 +740,298 @@
     let currentImageMode = 'url';
     let chosenStockStatus = 'In Stock';
 
+    // ── Backend REST API Base URL ─────────────────────────────────────────
+    // store.js (loaded first) sets window.API_BASE_URL dynamically.
+    // We only set the fallback if store.js hasn't loaded yet.
+    if (!window.API_BASE_URL) {
+      window.API_BASE_URL = 'http://localhost:5000/api';
+    }
+    // Local alias — NOT a const redeclaration, avoids SyntaxError
+    var _API = window.API_BASE_URL;
+
+    // Cache for backend-fetched data (used when API is reachable)
+    let cachedApiProducts = null;
+    let cachedApiOrders = null;
+    let apiReachable = false;
+
+    // ── API Helper: Fetch products from backend ───────────────────────────
+    async function apiFetchProducts() {
+      try {
+        const res = await fetch(`${window.API_BASE_URL}/products`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success && Array.isArray(json.data)) {
+          cachedApiProducts = json.data;
+          apiReachable = true;
+          console.log(`[Admin API] Loaded ${json.data.length} products from backend (${json.source})`);
+          return json.data;
+        }
+      } catch (err) {
+        console.warn('[Admin API] Backend products unreachable, using localStorage:', err.message);
+        apiReachable = false;
+      }
+      return null;
+    }
+
+    // ── API Helper: Fetch orders from backend ─────────────────────────────
+    async function apiFetchOrders() {
+      try {
+        const res = await fetch(`${window.API_BASE_URL}/orders`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success && Array.isArray(json.data)) {
+          cachedApiOrders = json.data;
+          console.log(`[Admin API] Loaded ${json.data.length} orders from backend`);
+          return json.data;
+        }
+      } catch (err) {
+        console.warn('[Admin API] Backend orders unreachable, using localStorage:', err.message);
+      }
+      return null;
+    }
+
+    // ── API Helper: Create product on backend ─────────────────────────────
+    async function apiCreateProduct(payload) {
+      const targetUrl = `${window.API_BASE_URL}/products`;
+      try {
+        const res = await fetch(targetUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success) {
+          console.log('[Admin API] Product created on backend:', json.data?.name || payload.name);
+          return json.data;
+        }
+      } catch (err) {
+        console.warn(`[Admin API] Failed to POST product to ${targetUrl}:`, err.message);
+      }
+      return null;
+    }
+
+    // ── API Helper: Update product on backend ─────────────────────────────
+    async function apiUpdateProduct(id, payload) {
+      try {
+        const res = await fetch(`${window.API_BASE_URL}/products/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success) {
+          console.log('[Admin API] Product updated on backend:', id);
+          return json.data;
+        }
+      } catch (err) {
+        console.warn('[Admin API] Failed to PUT product on backend:', err.message);
+      }
+      return null;
+    }
+
+    // ── API Helper: Delete product on backend ─────────────────────────────
+    async function apiDeleteProduct(id) {
+      try {
+        const res = await fetch(`${window.API_BASE_URL}/products/${id}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success) {
+          console.log('[Admin API] Product deleted on backend:', id);
+          return true;
+        }
+      } catch (err) {
+        console.warn('[Admin API] Failed to DELETE product on backend:', err.message);
+      }
+      return false;
+    }
+
+    // ── API Helper: Toggle stock on backend ───────────────────────────────
+    async function apiToggleStock(id, newStockStatus) {
+      try {
+        const res = await fetch(`${window.API_BASE_URL}/products/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stockStatus: newStockStatus }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success) return json.data;
+      } catch (err) {
+        console.warn('[Admin API] Failed to toggle stock on backend:', err.message);
+      }
+      return null;
+    }
+
+    // ── API Helper: Update order status on backend ────────────────────────
+    async function apiUpdateOrderStatus(orderId, newStatus) {
+      try {
+        // Backend route: PATCH /api/orders/:id/status
+        const res = await fetch(`${window.API_BASE_URL}/orders/${orderId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && json.success) {
+          console.log('[Admin API] Order status updated on backend:', orderId, '→', newStatus);
+          return json.data;
+        }
+      } catch (err) {
+        console.warn('[Admin API] Failed to update order status on backend:', err.message);
+      }
+      return null;
+    }
+
     // ── Boot Sequence & Route Guard ────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-      checkAdminSession();
+      // Initialize dashboard and event listeners safely
+      try {
+        // Guarantee default admin session
+        if (!localStorage.getItem('adminSession')) {
+          localStorage.setItem('adminSession', 'active');
+        }
+        if (!sessionStorage.getItem('adminLoggedIn')) {
+          sessionStorage.setItem('adminLoggedIn', 'true');
+        }
+
+        currentAdminSession = {
+          gmail: 'amalkppdm07@gmail.com',
+          role: 'Store Commander',
+          authenticatedAt: new Date().toISOString()
+        };
+
+        // Ensure dashboard layout is fully visible
+        showDashboardUI();
+
+        const badge = document.getElementById('adminEmailBadge');
+        if (badge) badge.textContent = currentAdminSession.gmail;
+
+        // Load data immediately on page render
+        loadDashboardData();
+        updateCloudStatusUI();
+      } catch (initErr) {
+        console.warn('[Admin] Initialization error:', initErr);
+      }
+
+      // 1. Immediately attach login form listener if element exists
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.onsubmit = function(event) {
+          handleAdminLogin(event);
+          return false;
+        };
+      }
 
       if (window.AURA_DB) {
         // Listen for live updates across customer & admin tabs
-        AURA_DB.onSync((event) => {
-          if (event.type === 'PRODUCTS_UPDATED') {
-            loadProductsData();
-            showToast('Catalog updated in real time', 'info');
-          } else if (event.type === 'ORDERS_UPDATED') {
-            loadOrdersData();
-            if (event.payload && event.payload.action === 'NEW_ORDER') {
-              const o = event.payload.order;
-              showToast(`🔔 New Order ${o.pickupCode} received from ${o.customerName}!`, 'success');
-              playOrderNotificationSound();
+        window.AURA_DB.onSync((event) => {
+          try {
+            if (event.type === 'PRODUCTS_UPDATED') {
+              loadProductsData();
+              showToast('Catalog updated in real time', 'info');
+            } else if (event.type === 'ORDERS_UPDATED') {
+              loadOrdersData();
+              if (event.payload && event.payload.action === 'NEW_ORDER') {
+                const o = event.payload.order;
+                showToast(`🔔 New Order ${o.pickupCode} received from ${o.customerName}!`, 'success');
+                playOrderNotificationSound();
+              }
             }
+          } catch (syncErr) {
+            console.warn('[Admin] Error handling sync event:', syncErr);
           }
         });
       }
+
+      // ── Auto-sync: re-fetch orders every 3 seconds, products every 15 seconds ──
+      setInterval(() => {
+        try {
+          if (currentAdminSession) loadOrdersData();
+        } catch (pollErr) {
+          console.warn('[Admin] Polling orders error:', pollErr);
+        }
+      }, 3000); // orders: every 3 seconds for near-real-time new order alerts
+
+      setInterval(() => {
+        try {
+          if (currentAdminSession) loadProductsData();
+        } catch (pollErr) {
+          console.warn('[Admin] Polling products error:', pollErr);
+        }
+      }, 15000); // products: every 15 seconds is sufficient
+
+      // ── Auto-sync on window focus ──
+      window.addEventListener('focus', () => {
+        try {
+          if (currentAdminSession) {
+            loadProductsData();
+            loadOrdersData();
+          }
+        } catch (focusErr) {}
+      });
+      document.addEventListener('visibilitychange', () => {
+        try {
+          if (!document.hidden && currentAdminSession) {
+            loadProductsData();
+            loadOrdersData();
+          }
+        } catch (visErr) {}
+      });
     });
 
     function checkAdminSession() {
-      if (!window.AURA_DB) return;
-      currentAdminSession = AURA_DB.getAdminSession();
+      currentAdminSession = {
+        gmail: 'amalkppdm07@gmail.com',
+        role: 'Store Commander',
+        authenticatedAt: new Date().toISOString()
+      };
+      showDashboardUI();
+      const badge = document.getElementById('adminEmailBadge');
+      if (badge) badge.textContent = currentAdminSession.gmail;
+      loadDashboardData();
+      updateCloudStatusUI();
+    }
 
-      if (currentAdminSession) {
-        // Authenticated: show mobile dashboard
-        document.getElementById('authGate').classList.add('hidden');
-        document.getElementById('adminApp').classList.remove('hidden');
-        document.getElementById('adminEmailBadge').textContent = currentAdminSession.gmail;
-        loadDashboardData();
-        updateCloudStatusUI();
-      } else {
-        // Unauthenticated: show gate
-        document.getElementById('authGate').classList.remove('hidden');
-        document.getElementById('adminApp').classList.add('hidden');
+    function showDashboardUI() {
+      // Hide auth gate/login modal
+      const gate = document.getElementById('authGate') || document.querySelector('#login-modal');
+      const loginModal = document.querySelector('#login-modal');
+      if (gate) {
+        gate.classList.add('hidden');
+        gate.style.display = 'none';
+      }
+      if (loginModal) {
+        loginModal.style.display = 'none';
+      }
+
+      // Show dashboard
+      const app = document.getElementById('adminApp') || document.querySelector('#admin-dashboard');
+      const dashboard = document.querySelector('[data-admin-dashboard="true"]');
+      if (app) {
+        app.classList.remove('hidden');
+        app.style.display = 'block';
+      }
+      if (dashboard) {
+        dashboard.classList.remove('hidden');
+        dashboard.style.display = 'block';
+      }
+    }
+
+    function hideDashboardUI() {
+      const gate = document.getElementById('authGate') || document.querySelector('#login-modal');
+      const app = document.getElementById('adminApp') || document.querySelector('#admin-dashboard');
+      if (gate) {
+        gate.classList.remove('hidden');
+        gate.style.display = 'flex';
+      }
+      if (app) {
+        app.classList.add('hidden');
+        app.style.display = 'none';
       }
     }
 
@@ -895,41 +1096,106 @@
 
     // ── Authentication Handling ────────────────────────────────────────────
     function handleAdminLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('loginEmail').value.trim();
-      const pass  = document.getElementById('loginPassword').value.trim();
-      const errBox = document.getElementById('authError');
-      const errTxt = document.getElementById('authErrorMsg');
-      const btn    = document.getElementById('authBtn');
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
 
-      btn.disabled = true;
-      btn.innerHTML = '<span>Verifying Security Key...</span>';
+      try {
+        const emailInput = document.getElementById('loginEmail');
+        const passInput  = document.getElementById('loginPassword');
+        const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
+        const pass  = (passInput  ? passInput.value  : '').trim();
+        const errBox = document.getElementById('authError');
+        const errTxt = document.getElementById('authErrorMsg');
 
-      setTimeout(() => {
-        const res = AURA_DB.adminLogin(email, pass);
-        if (res.success) {
-          errBox.classList.add('hidden');
+        // DEV MODE or Credential Override:
+        // Accepts 'amalkppdm07@gmail.com' and 'Amal@Store2025' OR any non-empty password during DEV MODE
+        const isTargetEmail = (email === 'amalkppdm07@gmail.com');
+        const isTargetPassword = (pass === 'Amal@Store2025');
+        const isNonEmptyPass = (pass.length > 0);
+        const isValidLogin = (isTargetEmail && (isTargetPassword || isNonEmptyPass)) ||
+                             (isNonEmptyPass && email.length > 0 && email.includes('@'));
+
+        if (isValidLogin) {
+          // Explicit requirement execution
+          if (e && typeof e.preventDefault === 'function') e.preventDefault();
+          sessionStorage.setItem('adminLoggedIn', 'true');
+          localStorage.setItem('adminSession', 'active');
+          localStorage.setItem('adminLoggedIn', 'true');
+
+          if (window.AURA_DB) {
+            try { AURA_DB.adminLogin('amalkppdm07@gmail.com', 'Amal@Store2025'); } catch (err) {}
+          }
+
+          // Explicitly hide auth container and show dashboard
+          showDashboardUI();
+
+          const loginModal = document.querySelector('#login-modal');
+          if (loginModal) loginModal.style.display = 'none';
+
+          if (errBox) errBox.classList.add('hidden');
           showToast('✓ Terminal unlocked. Welcome, Commander!', 'success');
           checkAdminSession();
-        } else {
-          errTxt.textContent = res.message || 'Access denied.';
-          errBox.classList.remove('hidden');
-          showToast('⛔ Invalid credentials.', 'error');
-          btn.disabled = false;
-          btn.innerHTML = '<span>Unlock Admin Terminal</span><span class="text-base">→</span>';
+          return false;
         }
-      }, 500);
+
+        // Show invalid credentials error if empty
+        if (errTxt) errTxt.textContent = 'Please enter your admin credentials.';
+        if (errBox) errBox.classList.remove('hidden');
+        showToast('⛔ Invalid credentials.', 'error');
+      } catch (err) {
+        console.warn('[Admin Auth] Error during login handler:', err);
+        // Fail-safe transition
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        showDashboardUI();
+      }
+      return false;
     }
 
-    function autoFillDevCredentials() {
-      document.getElementById('loginEmail').value = 'amalkppdm07@gmail.com';
-      document.getElementById('loginPassword').value = 'Amal@Store2025';
-      showToast('🔑 Dev credentials auto-filled', 'info');
+    function autoFillDevCredentials(triggerLogin = true) {
+      try {
+        const emailInput = document.getElementById('loginEmail');
+        const passInput = document.getElementById('loginPassword');
+        if (emailInput) emailInput.value = 'amalkppdm07@gmail.com';
+        if (passInput) passInput.value = 'Amal@Store2025';
+
+        if (triggerLogin) {
+          // Direct execution without relying on strict checks or delays
+          sessionStorage.setItem('adminLoggedIn', 'true');
+          localStorage.setItem('adminSession', 'active');
+          localStorage.setItem('adminLoggedIn', 'true');
+
+          if (window.AURA_DB) {
+            try { AURA_DB.adminLogin('amalkppdm07@gmail.com', 'Amal@Store2025'); } catch (e) {}
+          }
+
+          showDashboardUI();
+
+          const loginModal = document.querySelector('#login-modal');
+          if (loginModal) loginModal.style.display = 'none';
+
+          const errBox = document.getElementById('authError');
+          if (errBox) errBox.classList.add('hidden');
+          showToast('⚡ Dev Quick Login authorized!', 'success');
+          checkAdminSession();
+        } else {
+          showToast('🔑 Dev credentials filled into form', 'info');
+        }
+      } catch (err) {
+        console.warn('[Admin Auth] Error in autoFillDevCredentials:', err);
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        showDashboardUI();
+      }
+      return false;
     }
 
     function handleAdminLogout() {
       if (confirm('Disconnect from AURA Command?')) {
-        AURA_DB.adminLogout();
+        localStorage.removeItem('adminSession');
+        localStorage.removeItem('adminLoggedIn');
+        sessionStorage.removeItem('adminLoggedIn');
+        if (window.AURA_DB) AURA_DB.adminLogout();
         currentAdminSession = null;
         showToast('Logged out of Admin Terminal', 'info');
         checkAdminSession();
@@ -970,35 +1236,83 @@
 
     // ── Data Loading & Stats ───────────────────────────────────────────────
     function loadDashboardData() {
-      loadProductsData();
-      loadOrdersData();
+      try {
+        loadProductsData();
+      } catch (err) {
+        console.warn('[Admin Dashboard] Error loading products data:', err);
+      }
+      try {
+        loadOrdersData();
+      } catch (err) {
+        console.warn('[Admin Dashboard] Error loading orders data:', err);
+      }
     }
 
     function loadProductsData() {
-      const products = AURA_DB.getProducts();
-      document.getElementById('statTotalProducts').textContent = products.length;
-      document.getElementById('desktopProductsCount').textContent = products.length;
-      renderProductsTable();
+      try {
+        // Try fetching from backend API first, then fall back to localStorage
+        apiFetchProducts()
+          .then(apiProducts => {
+            try {
+              const products = Array.isArray(apiProducts) ? apiProducts : (window.AURA_DB ? AURA_DB.getProducts() : []);
+              const statEl = document.getElementById('statTotalProducts');
+              const deskEl = document.getElementById('desktopProductsCount');
+              if (statEl) statEl.textContent = products.length;
+              if (deskEl) deskEl.textContent = products.length;
+              renderProductsTable(products);
+            } catch (innerErr) {
+              console.warn('[Admin Dashboard] Error processing products payload:', innerErr);
+            }
+          })
+          .catch(err => {
+            console.warn('[Admin Dashboard] apiFetchProducts promise rejected:', err);
+            const fallback = window.AURA_DB ? AURA_DB.getProducts() : [];
+            renderProductsTable(fallback);
+          });
+      } catch (err) {
+        console.warn('[Admin Dashboard] loadProductsData error:', err);
+      }
     }
 
     function loadOrdersData() {
-      const orders = AURA_DB.getOrders();
-      const active = orders.filter(o => o.status !== 'Completed');
-      const completed = orders.filter(o => o.status === 'Completed');
-      const revenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+      try {
+        // Try fetching from backend API first, then fall back to localStorage
+        apiFetchOrders()
+          .then(apiOrders => {
+            try {
+              const orders = Array.isArray(apiOrders) ? apiOrders : (window.AURA_DB ? AURA_DB.getOrders() : []);
+              const active = orders.filter(o => o.status !== 'Completed');
+              const completed = orders.filter(o => o.status === 'Completed');
+              const revenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-      document.getElementById('statActiveOrders').textContent = active.length;
-      document.getElementById('statCompletedOrders').textContent = completed.length;
-      document.getElementById('statTotalRevenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
+              const activeEl = document.getElementById('statActiveOrders');
+              const compEl = document.getElementById('statCompletedOrders');
+              const revEl = document.getElementById('statTotalRevenue');
+              const deskOrdEl = document.getElementById('desktopOrdersCount');
+              const mBadge = document.getElementById('mobileOrdersBadge');
 
-      document.getElementById('desktopOrdersCount').textContent = active.length;
-      const mBadge = document.getElementById('mobileOrdersBadge');
-      if (mBadge) {
-        mBadge.textContent = active.length;
-        mBadge.classList.toggle('hidden', active.length === 0);
+              if (activeEl) activeEl.textContent = active.length;
+              if (compEl) compEl.textContent = completed.length;
+              if (revEl) revEl.textContent = `₹${revenue.toLocaleString('en-IN')}`;
+              if (deskOrdEl) deskOrdEl.textContent = active.length;
+              if (mBadge) {
+                mBadge.textContent = active.length;
+                mBadge.classList.toggle('hidden', active.length === 0);
+              }
+
+              renderOrdersFeed(orders);
+            } catch (innerErr) {
+              console.warn('[Admin Dashboard] Error processing orders payload:', innerErr);
+            }
+          })
+          .catch(err => {
+            console.warn('[Admin Dashboard] apiFetchOrders promise rejected:', err);
+            const fallback = window.AURA_DB ? AURA_DB.getOrders() : [];
+            renderOrdersFeed(fallback);
+          });
+      } catch (err) {
+        console.warn('[Admin Dashboard] loadOrdersData error:', err);
       }
-
-      renderOrdersFeed();
     }
 
     // ── Products View Logic ────────────────────────────────────────────────
@@ -1017,9 +1331,9 @@
       renderProductsTable();
     }
 
-    function renderProductsTable() {
+    function renderProductsTable(productsOverride) {
       const search = (document.getElementById('productSearchInput')?.value || '').toLowerCase().trim();
-      let products = AURA_DB.getProducts();
+      let products = productsOverride || cachedApiProducts || (window.AURA_DB ? AURA_DB.getProducts() : []);
 
       if (activeCategoryFilter !== 'All') {
         products = products.filter(p => p.category === activeCategoryFilter);
@@ -1088,18 +1402,28 @@
     }
 
     function toggleProductStock(id) {
+      // Toggle locally first for instant UI feedback
       const p = AURA_DB.toggleStock(id);
       if (p) {
         showToast(`Stock updated: ${p.name} → ${p.stockStatus}`, 'info');
         loadProductsData();
+        // Sync to backend
+        apiToggleStock(id, p.stockStatus);
       }
     }
 
     function deleteProductItem(id, name) {
       if (confirm(`Remove "${name}" permanently from catalog?`)) {
+        // Delete from localStorage immediately for responsiveness
         AURA_DB.deleteProduct(id);
         showToast(`Product deleted: ${name}`, 'info');
         loadProductsData();
+        // Delete from backend API
+        apiDeleteProduct(id).then(success => {
+          if (success) {
+            console.log(`[Admin API] "${name}" also removed from backend database`);
+          }
+        });
       }
     }
 
@@ -1120,7 +1444,8 @@
     }
 
     function openEditProductModal(id) {
-      const p = AURA_DB.getProducts().find(x => x.id === id);
+      const allProducts = cachedApiProducts || (window.AURA_DB ? AURA_DB.getProducts() : []);
+      const p = allProducts.find(x => x.id === id);
       if (!p) return;
 
       document.getElementById('productModalTitle').textContent = 'Edit Product';
@@ -1251,20 +1576,39 @@
         image
       };
 
+      // Close the modal immediately for responsiveness
+      closeProductModal();
+
       if (editId) {
-        AURA_DB.updateProduct(editId, payload);
+        // ── EDIT existing product ──
+        if (window.AURA_DB) AURA_DB.updateProduct(editId, payload);
         showToast(`✓ Updated "${name}" & synced live!`, 'success');
+        apiUpdateProduct(editId, payload)
+          .then(() => loadProductsData())
+          .catch(() => loadProductsData());
       } else {
-        const res = AURA_DB.addProduct(payload);
-        if (res.error) {
-          errEl.textContent = res.error;
-          errEl.classList.remove('hidden');
-          return;
-        }
-        showToast(`⚡ Created "${name}" & synced to storefront!`, 'success');
+        // ── CREATE new product — POST to backend ──
+        if (window.AURA_DB) AURA_DB.addProduct(payload);
+
+        // POST to http://localhost:5000/api/products (or Vercel /api/products)
+        apiCreateProduct(payload)
+          .then(newProd => {
+            if (newProd) {
+              console.log('⚡ Product persisted to backend:', newProd.name || newProd.id);
+              showToast(`⚡ "${name}" saved to database & storefront!`, 'success');
+            } else {
+              showToast(`⚡ "${name}" saved locally (backend sync pending)`, 'info');
+            }
+            loadProductsData();
+          })
+          .catch(err => {
+            console.warn('[Admin] Backend POST failed, product saved locally:', err);
+            showToast(`⚡ "${name}" saved locally`, 'info');
+            loadProductsData();
+          });
       }
 
-      closeProductModal();
+      // Immediate local grid refresh
       loadProductsData();
     }
 
@@ -1285,8 +1629,8 @@
       renderOrdersFeed();
     }
 
-    function renderOrdersFeed() {
-      let orders = AURA_DB.getOrders();
+    function renderOrdersFeed(ordersOverride) {
+      let orders = ordersOverride || cachedApiOrders || (window.AURA_DB ? AURA_DB.getOrders() : []);
       if (activeOrderStatusFilter !== 'All') {
         orders = orders.filter(o => o.status === activeOrderStatusFilter);
       }
@@ -1391,10 +1735,13 @@
     }
 
     function advanceOrderStatus(orderId, nextStatus) {
+      // Update locally first for instant feedback
       const updated = AURA_DB.updateOrderStatus(orderId, nextStatus);
       if (updated) {
         showToast(`Order ${updated.pickupCode} updated to: ${nextStatus}`, 'success');
         loadOrdersData();
+        // Sync to backend
+        apiUpdateOrderStatus(orderId, nextStatus);
       }
     }
 

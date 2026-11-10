@@ -1,3 +1,35 @@
+// ── Dynamic API Base URL ──────────────────────────────────────────────
+// Automatically detects local dev vs live production (Vercel) environment.
+// 1. Localhost, 127.0.0.1, or file:// protocol → 'http://localhost:5000/api'
+// 2. Production (amalstores.vercel.app) → uses relative '/api' (proxied by vercel.json) or direct live backend
+const LIVE_BACKEND_URL = 'https://amalstores-backend.onrender.com/api'; // Live Render/Railway backend URL
+
+const API_BASE_URL = (function() {
+  if (typeof window !== 'undefined') {
+    // Allow custom override via localStorage if testing different backends
+    const customApi = localStorage.getItem('aura_api_base_url');
+    if (customApi) return customApi;
+
+    const proto = window.location.protocol;
+    const host = window.location.hostname;
+
+    // Running locally or offline
+    if (proto === 'file:' || !host || host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:5000/api';
+    }
+
+    // Running on Vercel (amalstores.vercel.app):
+    // vercel.json proxies /api/:path* directly to https://amalstores-backend.onrender.com/api/:path*
+    // Using relative '/api' avoids CORS issues and works smoothly with Vercel rewrites.
+    return '/api';
+  }
+  return 'http://localhost:5000/api';
+})();
+
+if (typeof window !== 'undefined') {
+  window.API_BASE_URL = API_BASE_URL;
+}
+
 /**
  * AURA Zero-G Grocery — Shared Real-Time Database Engine (v5)
  * Handles Products, Orders, Admin Auth, PIN Verification & BroadcastChannel Sync
@@ -275,6 +307,26 @@ const AURA_DB = (() => {
       products.unshift(newProduct);
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
       broadcastChange('PRODUCTS_UPDATED', { action: 'ADD', product: newProduct });
+
+      // ── Backend API Sync (POST /api/products) ──
+      try {
+        if (typeof fetch !== 'undefined') {
+          const apiEndpoint = (typeof window !== 'undefined' && window.API_BASE_URL) ? window.API_BASE_URL : API_BASE_URL;
+          fetch(`${apiEndpoint}/products`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newProduct)
+          })
+          .then(res => res.json())
+          .then(json => {
+            if (json && json.success) console.log('⚡ Product synced to backend API:', newProduct.name);
+          })
+          .catch(err => console.warn('[AURA_DB] Backend API add product sync note:', err.message));
+        }
+      } catch (e) {
+        console.warn('[AURA_DB] Error triggering add product fetch:', e.message);
+      }
+
       return newProduct;
     },
 
@@ -300,6 +352,22 @@ const AURA_DB = (() => {
       products[idx] = { ...products[idx], ...updates, updatedAt: new Date().toISOString() };
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
       broadcastChange('PRODUCTS_UPDATED', { action: 'UPDATE', product: products[idx] });
+
+      // ── Backend API Sync (PUT /api/products/:id) ──
+      try {
+        if (typeof fetch !== 'undefined') {
+          const apiEndpoint = (typeof window !== 'undefined' && window.API_BASE_URL) ? window.API_BASE_URL : API_BASE_URL;
+          fetch(`${apiEndpoint}/products/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+          })
+          .catch(err => console.warn('[AURA_DB] Backend API update product sync note:', err.message));
+        }
+      } catch (e) {
+        console.warn('[AURA_DB] Error triggering update product fetch:', e.message);
+      }
+
       return products[idx];
     },
 
@@ -328,6 +396,20 @@ const AURA_DB = (() => {
       const products = this.getProducts().filter(p => p.id !== id);
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
       broadcastChange('PRODUCTS_UPDATED', { action: 'DELETE', id });
+
+      // ── Backend API Sync (DELETE /api/products/:id) ──
+      try {
+        if (typeof fetch !== 'undefined') {
+          const apiEndpoint = (typeof window !== 'undefined' && window.API_BASE_URL) ? window.API_BASE_URL : API_BASE_URL;
+          fetch(`${apiEndpoint}/products/${encodeURIComponent(id)}`, {
+            method: 'DELETE'
+          })
+          .catch(err => console.warn('[AURA_DB] Backend API delete product sync note:', err.message));
+        }
+      } catch (e) {
+        console.warn('[AURA_DB] Error triggering delete product fetch:', e.message);
+      }
+
       return true;
     },
 
@@ -385,6 +467,27 @@ const AURA_DB = (() => {
       orders.unshift(newOrder);
       localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
       broadcastChange('ORDERS_UPDATED', { action: 'NEW_ORDER', order: newOrder });
+
+      // ── Backend API Sync (POST /api/orders) ──
+      try {
+        if (typeof fetch !== 'undefined') {
+          const apiEndpoint = (typeof window !== 'undefined' && window.API_BASE_URL) ? window.API_BASE_URL : API_BASE_URL;
+          fetch(`${apiEndpoint}/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newOrder)
+          })
+          .then(res => res.json())
+          .then(json => {
+            if (json && json.success) {
+              console.log('⚡ Order synced to backend API:', json.data?.orderId || newOrder.id);
+            }
+          })
+          .catch(err => console.warn('[AURA_DB] Backend API order sync note:', err.message));
+        }
+      } catch (e) {
+        console.warn('[AURA_DB] Error triggering order fetch:', e.message);
+      }
 
       // ── Cloud Database Insertion (Supabase 'orders' table) ──
       if (supabaseClient) {

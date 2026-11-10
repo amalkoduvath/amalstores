@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./config/db');
 
+const Product = require('./models/Product');
+const { getIsConnected } = require('./config/db');
+
 // Import Route Handlers
 const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
@@ -31,6 +34,42 @@ app.use((req, res, next) => {
     console.log(`[${req.method}] ${req.originalUrl} → ${res.statusCode} (${duration}ms)`);
   });
   next();
+});
+
+// Explicit POST /api/products route directly defined for local MongoDB freshcart database
+app.post('/api/products', async (req, res, next) => {
+  try {
+    const { name, category, price, mrp, unit, image, stockStatus, description } = req.body;
+
+    if (!name || !category || price === undefined) {
+      return res.status(400).json({ success: false, message: 'name, category, and price are required' });
+    }
+
+    const generatedId = req.body.id || `prod-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`;
+    const productPayload = {
+      id: generatedId,
+      name: String(name).trim(),
+      category: String(category).trim(),
+      price: Number(price),
+      mrp: mrp ? Number(mrp) : null,
+      unit: unit ? String(unit).trim() : '1 unit',
+      image: image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80',
+      stockStatus: stockStatus || 'In Stock',
+      inStock: stockStatus !== 'Out of Stock',
+      description: description ? String(description).trim() : '',
+    };
+
+    if (getIsConnected()) {
+      const newProduct = await Product.create(productPayload);
+      return res.status(201).json({ success: true, source: 'mongodb', data: newProduct });
+    }
+
+    // Pass to productRoutes router fallback if db is not connected
+    return next();
+  } catch (error) {
+    console.error('Error in POST /api/products:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 // Health Check Endpoint

@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 let isConnected = false;
 
 const connectDB = async () => {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freshcart';
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/freshcart';
   try {
     mongoose.set('strictQuery', false);
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 4000,
+      serverSelectionTimeoutMS: 5000,
     });
     isConnected = true;
     console.log(`🌿 MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
