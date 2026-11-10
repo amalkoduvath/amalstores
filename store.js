@@ -2,7 +2,7 @@
 // Automatically detects local dev vs live production (Vercel) environment.
 // 1. Localhost, 127.0.0.1, or file:// protocol → 'http://localhost:5000/api'
 // 2. Production (amalstores.vercel.app) → uses relative '/api' (proxied by vercel.json) or direct live backend
-const LIVE_BACKEND_URL = 'https://amalstores-backend.onrender.com/api'; // Live Render/Railway backend URL
+const LIVE_BACKEND_URL = 'https://amalstores.onrender.com/api'; // Live Render backend URL
 
 const API_BASE_URL = (function() {
   if (typeof window !== 'undefined') {
