@@ -869,8 +869,8 @@
     // ── API Helper: Update order status on backend ────────────────────────
     async function apiUpdateOrderStatus(orderId, newStatus) {
       try {
-        // Backend route: PATCH /api/orders/:id/status
-        const res = await fetch(`${window.API_BASE_URL}/orders/${orderId}/status`, {
+        const apiBase = window.API_BASE_URL || 'http://localhost:5000/api';
+        const res = await fetch(`${apiBase}/orders/${orderId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus }),
@@ -1274,7 +1274,13 @@
       }
     }
 
+    // Alias loadLiveOrders to loadOrdersData for direct semantic calls
     function loadOrdersData() {
+      return loadLiveOrders();
+    }
+    window.loadOrdersData = loadOrdersData;
+
+    function loadLiveOrders() {
       try {
         // Try fetching from backend API first, then fall back to localStorage
         apiFetchOrders()
@@ -1656,22 +1662,25 @@
         let statusClass = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30';
         let actionBtn = '';
 
+        // Target valid MongoDB _id or orderId
+        const targetOrderId = o._id || o.orderId || o.id;
+
         if (o.status === 'Received') {
           statusClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40 animate-pulse';
           actionBtn = `
-            <button onclick="advanceOrderStatus('${o.id}', 'Packing')" class="btn-cyan text-xs py-2 w-full">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Packing')" class="btn-cyan text-xs py-2 w-full">
               <span>Advance to Packing 📦</span>
             </button>`;
         } else if (o.status === 'Packing') {
           statusClass = 'bg-amber-500/15 text-amber-300 border-amber-500/40 animate-pulse';
           actionBtn = `
-            <button onclick="advanceOrderStatus('${o.id}', 'Ready for Pickup')" class="btn-emerald text-xs py-2 w-full">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Ready for Pickup')" class="btn-emerald text-xs py-2 w-full">
               <span>Mark Ready for Pickup ⚡</span>
             </button>`;
         } else if (o.status === 'Ready for Pickup') {
           statusClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 animate-pulse';
           actionBtn = `
-            <button onclick="advanceOrderStatus('${o.id}', 'Completed')" class="btn-violet text-xs py-2 w-full">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Completed')" class="btn-violet text-xs py-2 w-full">
               <span>Confirm Handover & Complete ✓</span>
             </button>`;
         } else {
@@ -1679,7 +1688,21 @@
           actionBtn = `<div class="text-xs text-center text-slate-500 py-1 font-mono">✓ Handed Over to Customer</div>`;
         }
 
-        const dateStr = new Date(o.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        // ── Robust date formatting preventing "undefined · Invalid Date" ──
+        const rawDate = o.createdAt || o.date || o.timestamp || Date.now();
+        const dateObj = new Date(rawDate);
+        const dateStr = !isNaN(dateObj.getTime())
+          ? dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+          : new Date().toLocaleDateString();
+
+        // ── Clean fallback for order ID / reference ──
+        const orderRef = o.orderRef || o.orderId || o.id || (o._id ? String(o._id).slice(-8) : 'ORD-???');
+        const pickupSlot = o.pickupSlot || o.slot || o.timeSlot || 'Instant Express';
+        const pickupCode = o.pickupCode || o.code || 'PK-???';
+        const pinCode = o.pin || o.pickupPin || o.verificationPin || '------';
+        const customerName = o.customerName || o.name || 'Cosmic Shopper';
+        const customerPhone = o.phone || o.phoneNumber || 'N/A';
+        const orderTotal = o.totalAmount !== undefined ? o.totalAmount : (o.total || 0);
 
         return `
           <div class="glass rounded-2xl p-4 lev-card border border-slate-800 flex flex-col justify-between space-y-3.5">
@@ -1687,12 +1710,12 @@
               <!-- Header info: Pickup Code & PIN -->
               <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
                 <div>
-                  <div class="font-mono font-bold text-xl text-cyan-300 tracking-wider">${o.pickupCode || 'PK-???'}</div>
-                  <div class="text-[10px] font-mono text-slate-400">${o.id} · ${dateStr}</div>
+                  <div class="font-mono font-bold text-xl text-cyan-300 tracking-wider">${escapeHtml(pickupCode)}</div>
+                  <div class="text-[10px] font-mono text-slate-400">${escapeHtml(orderRef)} · ${dateStr}</div>
                 </div>
                 <div class="text-right">
                   <div class="text-[10px] font-mono text-slate-400 uppercase">CONFIRMATION PIN</div>
-                  <div class="font-mono font-bold text-base text-amber-400 tracking-widest">${o.pin || '------'}</div>
+                  <div class="font-mono font-bold text-base text-amber-400 tracking-widest">${escapeHtml(pinCode)}</div>
                 </div>
               </div>
 
@@ -1700,15 +1723,15 @@
               <div class="grid grid-cols-2 gap-2 text-xs pt-2 text-slate-300">
                 <div>
                   <span class="text-slate-500 block text-[10px] uppercase font-mono">Customer</span>
-                  <span class="font-semibold text-white">${escapeHtml(o.customerName || 'Cosmic Shopper')}</span>
+                  <span class="font-semibold text-white">${escapeHtml(customerName)}</span>
                 </div>
                 <div>
                   <span class="text-slate-500 block text-[10px] uppercase font-mono">Phone</span>
-                  <span>${escapeHtml(o.phone || 'N/A')}</span>
+                  <span>${escapeHtml(customerPhone)}</span>
                 </div>
                 <div class="col-span-2">
                   <span class="text-slate-500 block text-[10px] uppercase font-mono">Pickup Slot</span>
-                  <span class="text-cyan-400 font-medium">${escapeHtml(o.pickupSlot || 'Instant Express')}</span>
+                  <span class="text-cyan-400 font-medium">${escapeHtml(pickupSlot)}</span>
                 </div>
               </div>
 
@@ -1725,7 +1748,7 @@
             <div class="pt-2 border-t border-slate-800/80 space-y-2">
               <div class="flex items-center justify-between">
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusClass}">${o.status}</span>
-                <span class="font-display font-bold text-lg text-white">₹${o.totalAmount}</span>
+                <span class="font-display font-bold text-lg text-white">₹${orderTotal}</span>
               </div>
               ${actionBtn}
             </div>
@@ -1734,16 +1757,39 @@
       }).join('');
     }
 
-    function advanceOrderStatus(orderId, nextStatus) {
-      // Update locally first for instant feedback
-      const updated = AURA_DB.updateOrderStatus(orderId, nextStatus);
-      if (updated) {
-        showToast(`Order ${updated.pickupCode} updated to: ${nextStatus}`, 'success');
-        loadOrdersData();
-        // Sync to backend
-        apiUpdateOrderStatus(orderId, nextStatus);
+    function handleStatusUpdate(orderId, nextStatus) {
+      // Update locally in AURA_DB if present for instant visual feedback
+      if (window.AURA_DB) {
+        const updated = AURA_DB.updateOrderStatus(orderId, nextStatus);
+        if (updated) {
+          showToast(`Order ${updated.pickupCode || orderId} updated to: ${nextStatus}`, 'success');
+        }
       }
+
+      // Sync to backend via PATCH /api/orders/${orderId} and refresh live orders
+      const apiBase = window.API_BASE_URL || 'http://localhost:5000/api';
+      fetch(`${apiBase}/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      })
+      .then(res => {
+        if (res.ok) {
+          loadLiveOrders();
+        } else {
+          console.warn(`[Admin] Backend PATCH status HTTP ${res.status}`);
+          loadLiveOrders();
+        }
+      })
+      .catch(err => {
+        console.warn('[Admin] Failed to sync order status to backend:', err);
+        loadLiveOrders();
+      });
     }
+
+    // Alias for backwards compatibility
+    const advanceOrderStatus = handleStatusUpdate;
+    window.handleStatusUpdate = handleStatusUpdate;
 
     // ── PIN Verification Keypad Tool ───────────────────────────────────────
     function handleDirectPinInput(val) {

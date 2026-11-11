@@ -192,6 +192,75 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * @route   PATCH /api/orders/:id
+ * @desc    Update order status directly (e.g. Order.findByIdAndUpdate)
+ * @access  Staff / Admin
+ */
+router.patch('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, note } = req.body;
+
+    const validStatuses = ['Received', 'Packing', 'Ready for Pickup', 'Completed', 'Cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    if (getIsConnected()) {
+      let order = null;
+      // If valid MongoDB ObjectId, update directly using Order.findByIdAndUpdate
+      if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
+        order = await Order.findByIdAndUpdate(
+          id,
+          {
+            $set: { status },
+            $push: { history: { status, timestamp: new Date(), note: note || `Status updated to ${status}` } },
+          },
+          { new: true }
+        );
+      }
+
+      // If not updated by _id, match by orderId / id string
+      if (!order) {
+        order = await Order.findOneAndUpdate(
+          { $or: [{ orderId: id }, { id }] },
+          {
+            $set: { status },
+            $push: { history: { status, timestamp: new Date(), note: note || `Status updated to ${status}` } },
+          },
+          { new: true }
+        );
+      }
+
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      return res.json({ success: true, data: order });
+    }
+
+    const order = memoryOrders.find(o => o.orderId === id || o.id === id || (o._id && String(o._id) === id));
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    order.status = status;
+    if (!order.history) order.history = [];
+    order.history.push({
+      status,
+      timestamp: new Date(),
+      note: note || `Status updated to ${status}`,
+    });
+    return res.json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * @route   PATCH /api/orders/:id/status
  * @desc    Update order status in lifecycle (Received -> Packing -> Ready for Pickup -> Completed)
  * @access  Staff / Admin
@@ -219,6 +288,7 @@ router.patch('/:id/status', async (req, res) => {
       const order = await Order.findOne({
         $or: [
           { orderId: id },
+          { id },
           { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
         ],
       });
@@ -234,7 +304,7 @@ router.patch('/:id/status', async (req, res) => {
       return res.json({ success: true, data: order });
     }
 
-    const order = memoryOrders.find(o => o.orderId === id);
+    const order = memoryOrders.find(o => o.orderId === id || o.id === id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }

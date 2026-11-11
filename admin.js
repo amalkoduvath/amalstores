@@ -125,22 +125,31 @@ async function apiToggleStock(id, newStockStatus) {
   return null;
 }
 
-// ── API Helper: Update order status on backend ────────────────────────
-async function apiUpdateOrderStatus(orderId, newStatus) {
+// ── Action Buttons Order Status Handler ──────────────────────────────
+async function handleStatusUpdate(orderId, newStatus) {
   try {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+    const apiBase = window.API_BASE_URL || API_BASE_URL;
+    const res = await fetch(`${apiBase}/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (json && json.success) {
-      console.log('[Admin API] Order status updated on backend:', orderId, '→', newStatus);
-      return json.data;
+    if (res.ok) {
+      if (typeof window.loadLiveOrders === 'function') {
+        window.loadLiveOrders();
+      } else if (typeof window.loadOrdersData === 'function') {
+        window.loadOrdersData();
+      }
+      return true;
+    } else {
+      console.warn(`[Admin API] PATCH /api/orders/${orderId} responded with status:`, res.status);
     }
   } catch (err) {
     console.warn('[Admin API] Failed to update order status on backend:', err.message);
   }
-  return null;
+  return false;
 }
+
+// Alias for backwards compatibility
+const updateOrderStatusAction = handleStatusUpdate;
+window.handleStatusUpdate = handleStatusUpdate;
