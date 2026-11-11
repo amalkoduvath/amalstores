@@ -126,7 +126,12 @@ async function apiToggleStock(id, newStockStatus) {
 }
 
 // ── Action Buttons Order Status Handler ──────────────────────────────
-async function handleStatusUpdate(orderId, newStatus) {
+async function handleStatusUpdate(orderId, newStatus, btnElement) {
+  if (btnElement) {
+    btnElement.disabled = true;
+    btnElement.classList.add('opacity-75', 'cursor-not-allowed');
+    btnElement.innerHTML = '<span>Updating...</span>';
+  }
   try {
     const apiBase = window.API_BASE_URL || API_BASE_URL;
     const res = await fetch(`${apiBase}/orders/${orderId}`, {
@@ -135,6 +140,9 @@ async function handleStatusUpdate(orderId, newStatus) {
       body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Order marked as ${newStatus} ✓`, 'success');
+      }
       if (typeof window.loadLiveOrders === 'function') {
         window.loadLiveOrders();
       } else if (typeof window.loadOrdersData === 'function') {
@@ -143,11 +151,36 @@ async function handleStatusUpdate(orderId, newStatus) {
       return true;
     } else {
       console.warn(`[Admin API] PATCH /api/orders/${orderId} responded with status:`, res.status);
+      if (typeof window.loadLiveOrders === 'function') window.loadLiveOrders();
     }
   } catch (err) {
     console.warn('[Admin API] Failed to update order status on backend:', err.message);
+    if (typeof window.loadLiveOrders === 'function') window.loadLiveOrders();
   }
   return false;
+}
+
+// ── Admin PIN Verification Helper ────────────────────────────────────
+async function apiVerifyPin(pin) {
+  const cleanPin = String(pin || '').trim();
+  try {
+    const apiBase = window.API_BASE_URL || API_BASE_URL;
+    const res = await fetch(`${apiBase}/orders/verify-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: cleanPin, confirmationPin: cleanPin }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success) return json.data;
+    }
+  } catch (err) {
+    console.warn('[Admin API] Failed to verify PIN via backend:', err.message);
+  }
+  return null;
+}
+if (typeof window !== 'undefined') {
+  window.apiVerifyPin = apiVerifyPin;
 }
 
 // Alias for backwards compatibility

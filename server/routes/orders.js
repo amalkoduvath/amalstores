@@ -141,9 +141,10 @@ router.post('/', async (req, res) => {
     // Auto-generate identifiers & 4-digit pickup PIN
     const orderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
     const pickupCode = `PK-${Math.floor(100 + Math.random() * 900)}`;
-    // If the client provided a 4-digit PIN use it, otherwise generate a secure 4-digit PIN
-    const pin = (req.body.pin && /^\d{4}$/.test(String(req.body.pin)))
-      ? String(req.body.pin)
+    // Accept client confirmationPin or pin, or default to 4-digit PIN string fallback
+    const incomingPin = req.body.confirmationPin || req.body.pin;
+    const pin = (incomingPin && /^\d{4}$/.test(String(incomingPin)))
+      ? String(incomingPin)
       : generate4DigitPin();
 
     const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
@@ -152,6 +153,7 @@ router.post('/', async (req, res) => {
       orderId,
       pickupCode,
       pin, // Exactly 4 digits for in-store pickup
+      confirmationPin: pin,
       customerName,
       phone: cleanPhone,
       pickupSlot: pickupSlot || '⚡ Instant Express (15-20 Mins)',
@@ -201,7 +203,7 @@ router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const { status, note } = req.body;
 
-    const validStatuses = ['Received', 'Packing', 'Ready for Pickup', 'Completed', 'Cancelled'];
+    const validStatuses = ['Received', 'Packing', 'Ready for Pickup', 'Ready', 'Completed', 'Cancelled'];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -270,7 +272,7 @@ router.patch('/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status, note } = req.body;
 
-    const validStatuses = ['Received', 'Packing', 'Ready for Pickup', 'Completed', 'Cancelled'];
+    const validStatuses = ['Received', 'Packing', 'Ready for Pickup', 'Ready', 'Completed', 'Cancelled'];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -324,27 +326,33 @@ router.patch('/:id/status', async (req, res) => {
  */
 router.post('/verify-pin', async (req, res) => {
   try {
-    const { orderId, pickupCode, pin } = req.body;
+    const { orderId, pickupCode, pin, confirmationPin } = req.body;
+    const incomingPin = confirmationPin || pin;
 
-    if (!pin || String(pin).trim().length !== 4) {
+    if (!incomingPin || String(incomingPin).trim().length !== 4) {
       return res.status(400).json({ success: false, message: 'A 4-digit pickup PIN is required' });
     }
 
-    const cleanPin = String(pin).trim();
+    const cleanPin = String(incomingPin).trim();
 
     if (getIsConnected()) {
-      const order = await Order.findOne({
-        $or: [
-          { orderId },
-          { pickupCode },
-        ],
-      });
+      const query = [];
+      if (orderId) {
+        query.push({ orderId });
+        if (/^[0-9a-fA-F]{24}$/.test(orderId)) query.push({ _id: orderId });
+      }
+      if (pickupCode) query.push({ pickupCode });
+
+      const order = query.length > 0
+        ? await Order.findOne({ $or: query })
+        : await Order.findOne({ $or: [{ pin: cleanPin }, { confirmationPin: cleanPin }] });
 
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order reference not found' });
       }
 
-      if (order.pin !== cleanPin) {
+      const matchPin = order.confirmationPin || order.pin;
+      if (matchPin !== cleanPin && order.pin !== cleanPin) {
         return res.status(401).json({ success: false, message: 'Invalid 4-digit pickup PIN' });
       }
 
@@ -356,12 +364,16 @@ router.post('/verify-pin', async (req, res) => {
       });
     }
 
-    const order = memoryOrders.find(o => o.orderId === orderId || o.pickupCode === pickupCode);
+    const order = (orderId || pickupCode)
+      ? memoryOrders.find(o => o.orderId === orderId || o.pickupCode === pickupCode || o._id === orderId)
+      : memoryOrders.find(o => (o.confirmationPin || o.pin) === cleanPin);
+
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order reference not found' });
     }
 
-    if (order.pin !== cleanPin) {
+    const matchPin = order.confirmationPin || order.pin;
+    if (matchPin !== cleanPin && order.pin !== cleanPin) {
       return res.status(401).json({ success: false, message: 'Invalid 4-digit pickup PIN' });
     }
 

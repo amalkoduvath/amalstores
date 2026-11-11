@@ -873,9 +873,9 @@
 
         <!-- ACTIVE ORDER TRACKER (in-flow banner, never overlaps cards) -->
         <div id="trackerBar">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:34px;height:34px;border-radius:10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;font-size:15px;">🏬</div>
-            <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
+            <div style="width:34px;height:34px;border-radius:10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🏬</div>
+            <div style="flex:1;min-width:220px;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span style="font-size:12px;font-weight:700;color:#0F172A;">Active Pickup Pass:</span>
                 <span id="trackerCode" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--emerald-dark);font-size:12px;">PK-000</span>
@@ -885,6 +885,17 @@
                 <span id="trackerDot" style="width:7px;height:7px;background:var(--emerald);border-radius:50%;display:inline-block;animation:ping 1s infinite;"></span>
                 <span id="trackerStatus" style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;">Order Received in Store</span>
               </div>
+            </div>
+
+            <!-- In-Banner Stepper Tracker -->
+            <div id="bannerStepper" style="display:none;align-items:center;gap:4px;padding:4px 8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;font-size:10px;font-weight:700;">
+              <span id="bStep-Received" style="color:#64748B;padding:2px 6px;border-radius:4px;">Received</span>
+              <span style="color:#94A3B8;">→</span>
+              <span id="bStep-Packing" style="color:#64748B;padding:2px 6px;border-radius:4px;">Packing</span>
+              <span style="color:#94A3B8;">→</span>
+              <span id="bStep-Ready" style="color:#64748B;padding:2px 6px;border-radius:4px;">Ready</span>
+              <span style="color:#94A3B8;">→</span>
+              <span id="bStep-Completed" style="color:#64748B;padding:2px 6px;border-radius:4px;">Completed</span>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -1319,12 +1330,36 @@
         <span style="color:#475569;font-weight:700;">Total Payable</span>
         <span id="passTotal" style="color:#047857;font-weight:800;font-size:13px;">₹0</span>
       </div>
-      <!-- Live Status -->
+      <!-- Live Status & Interactive Stepper -->
       <div style="padding-top:7px;border-top:1px solid #E2E8F0;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-          <span style="font-size:9px;color:#64748B;text-transform:uppercase;">Vault Status</span>
-          <span id="passStatus" style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#ECFDF5;color:#047857;border:1px solid #A7F3D0;">Ready for Collection</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:9px;color:#64748B;text-transform:uppercase;">Live Vault Status</span>
+          <span id="passStatus" style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#ECFDF5;color:#047857;border:1px solid #A7F3D0;">Received</span>
         </div>
+
+        <!-- 4-Stage Visual Lifecycle Stepper -->
+        <div id="modalStepper" style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:8px;padding:8px;background:#F1F5F9;border-radius:8px;">
+          <div id="stepNode-Received" style="flex:1;text-align:center;padding:4px 2px;border-radius:6px;font-size:9px;font-weight:700;color:#64748B;">
+            <div style="font-size:12px;margin-bottom:2px;">📥</div>
+            <div>Received</div>
+          </div>
+          <div style="color:#94A3B8;font-size:10px;">→</div>
+          <div id="stepNode-Packing" style="flex:1;text-align:center;padding:4px 2px;border-radius:6px;font-size:9px;font-weight:700;color:#64748B;">
+            <div style="font-size:12px;margin-bottom:2px;">📦</div>
+            <div>Packing</div>
+          </div>
+          <div style="color:#94A3B8;font-size:10px;">→</div>
+          <div id="stepNode-Ready" style="flex:1;text-align:center;padding:4px 2px;border-radius:6px;font-size:9px;font-weight:700;color:#64748B;">
+            <div style="font-size:12px;margin-bottom:2px;">⚡</div>
+            <div>Ready</div>
+          </div>
+          <div style="color:#94A3B8;font-size:10px;">→</div>
+          <div id="stepNode-Completed" style="flex:1;text-align:center;padding:4px 2px;border-radius:6px;font-size:9px;font-weight:700;color:#64748B;">
+            <div style="font-size:12px;margin-bottom:2px;">✅</div>
+            <div>Completed</div>
+          </div>
+        </div>
+
         <p id="passStatusDesc" style="font-size:10px;color:#64748B;margin:0;">Order verified. Walk up to counter with this 4-digit PIN.</p>
       </div>
     </div>
@@ -1378,12 +1413,19 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────────
 let products = [];
-let cart = {}; // { id: qty }
+let cart = []; // Array of items: [{ id, name, price, quantity, unit, image }]
 let activeCat = 'All';
 let searchQ = '';
 let activeOrderId = null;
 let currentPendingOrderData = null;
 let activeOtpCode = '';
+
+function syncCartLegacy() {
+  if (!Array.isArray(cart)) return;
+  cart.forEach(item => {
+    cart[item.id] = item.quantity;
+  });
+}
 
 const CATS = [
   'Hydroponics',
@@ -1438,7 +1480,19 @@ var _API = window.API_BASE_URL || 'http://localhost:5000/api';
 
 // ── Boot ──────────────────────────────────────────────────────────────
 async function init() {
-  try { cart = JSON.parse(localStorage.getItem('aura_cart_v5') || '{}'); } catch { cart = {}; }
+  try {
+    const rawCart = JSON.parse(localStorage.getItem('aura_cart_v5') || '[]');
+    if (Array.isArray(rawCart)) {
+      cart = rawCart;
+    } else if (rawCart && typeof rawCart === 'object') {
+      cart = Object.entries(rawCart).map(([id, qty]) => ({ id, quantity: qty }));
+    } else {
+      cart = [];
+    }
+  } catch {
+    cart = [];
+  }
+  syncCartLegacy();
   activeOrderId = localStorage.getItem('aura_active_order_v5');
 
   await loadProducts();
@@ -1466,8 +1520,13 @@ async function init() {
     if (!document.hidden) { loadProducts(); }
   });
 
-  // ── Periodic auto-sync every 10 seconds ──
+  // ── Periodic auto-sync: products (10s) and active order status (6s) ──
   setInterval(() => { loadProducts(); }, 10000);
+  setInterval(() => {
+    if (activeOrderId) {
+      checkActiveOrder();
+    }
+  }, 6000);
 }
 
 async function loadProducts() {
@@ -1484,7 +1543,19 @@ async function loadProducts() {
 }
 
 function syncCartProductRefs() {
-  Object.keys(cart).forEach(id => { if (!products.find(p => p.id === id)) delete cart[id]; });
+  if (Array.isArray(cart)) {
+    cart.forEach(item => {
+      const p = products.find(x => x.id === item.id);
+      if (p) {
+        item.name = p.name;
+        item.price = p.price;
+        item.unit = p.unit;
+        item.image = p.image;
+      }
+    });
+    cart = cart.filter(item => products.some(p => p.id === item.id));
+  }
+  syncCartLegacy();
   saveCart();
 }
 
@@ -1538,6 +1609,9 @@ function renderGrid() {
   const label = document.getElementById('filterLabel');
   const count = document.getElementById('searchCount');
 
+  // Fix Duplicate Product Rendering Bug: Always clear target container first
+  if (grid) grid.innerHTML = '';
+
   const filtered = products.filter(p => {
     if (!searchQ) {
       return activeCat === 'All' || p.category === activeCat;
@@ -1557,14 +1631,16 @@ function renderGrid() {
   if (count) count.textContent = `${filtered.length} of ${products.length} items`;
 
   if (filtered.length === 0) {
-    grid.innerHTML = '';
-    empty.style.display = '';
+    if (grid) grid.innerHTML = '';
+    if (empty) empty.style.display = '';
     return;
   }
-  empty.style.display = 'none';
+  if (empty) empty.style.display = 'none';
 
+  if (!grid) return;
   grid.innerHTML = filtered.map(p => {
-    const qty = cart[p.id] || 0;
+    const cartItem = Array.isArray(cart) ? cart.find(x => x.id === p.id) : null;
+    const qty = cartItem ? cartItem.quantity : (cart[p.id] || 0);
     const status = p.stockStatus || (p.inStock ? 'In Stock' : 'Out of Stock');
     const isOut  = status === 'Out of Stock' || !p.inStock;
     const isLow  = status === 'Low Stock';
@@ -1596,11 +1672,11 @@ function renderGrid() {
               ? `<button disabled style="padding:5px 12px;font-size:11px;border-radius:7px;background:#F1F5F9;color:#94A3B8;border:1px solid #CBD5E1;cursor:not-allowed;">Unavailable</button>`
               : qty > 0
               ? `<div class="qty-ctrl">
-                   <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
+                   <button class="qty-btn" onclick="changeQty('${p.id}',-1,event)">−</button>
                    <span class="qty-num">${qty}</span>
-                   <button class="qty-btn" onclick="changeQty('${p.id}',1)">+</button>
+                   <button class="qty-btn" onclick="changeQty('${p.id}',1,event)">+</button>
                  </div>`
-              : `<button onclick="addToCart('${p.id}')" class="btn-outline-cyan" style="padding:5px 12px;font-size:11px;font-weight:700;">+ Add</button>`
+              : `<button onclick="addToCart('${p.id}',event)" class="btn-outline-cyan" style="padding:5px 12px;font-size:11px;font-weight:700;">+ Add</button>`
             }
           </div>
         </div>
@@ -1608,23 +1684,81 @@ function renderGrid() {
   }).join('');
 }
 
-// ── Cart ────────────────────────────────────────────────────────────
-function addToCart(id) {
-  const p = products.find(x => x.id === id);
-  if (!p || (!p.inStock && p.stockStatus === 'Out of Stock')) return;
-  cart[id] = (cart[id] || 0) + 1;
+// Global alias for renderProducts with container clearing
+function renderProducts() {
+  const container = document.getElementById('productGrid');
+  if (container) container.innerHTML = '';
+  renderGrid();
+}
+window.renderProducts = renderProducts;
+
+// ── Cart State & Deduplication ──────────────────────────────────────
+let isAddingToCart = false;
+
+function addToCart(productOrId, event) {
+  if (event) {
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+  // Debounce rapid double event triggers
+  if (isAddingToCart) return;
+  isAddingToCart = true;
+  setTimeout(() => { isAddingToCart = false; }, 200);
+
+  const id = (typeof productOrId === 'object' && productOrId !== null) ? (productOrId.id || productOrId._id) : productOrId;
+  const product = products.find(x => x.id === id) || (typeof productOrId === 'object' ? productOrId : null);
+  if (!product || (!product.inStock && product.stockStatus === 'Out of Stock')) return;
+
+  // Deduplicate items in state: Check const index = cart.findIndex(item => item.id === product.id)
+  const index = cart.findIndex(item => item.id === product.id);
+  if (index !== -1) {
+    cart[index].quantity += 1;
+  } else {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      unit: product.unit || '1 unit',
+      image: product.image || IMG_FALLBACK
+    });
+  }
+
+  syncCartLegacy();
   saveCart();
-  showToast(`+ Added ${p.name} to bag`);
+  showToast(`+ Added ${product.name} to bag`);
 }
 
-function changeQty(id, delta) {
-  cart[id] = (cart[id] || 0) + delta;
-  if (cart[id] <= 0) delete cart[id];
+function changeQty(id, delta, event) {
+  if (event) {
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+  const index = cart.findIndex(item => item.id === id);
+  if (index !== -1) {
+    cart[index].quantity += delta;
+    if (cart[index].quantity <= 0) {
+      delete cart[id];
+      cart.splice(index, 1);
+    } else {
+      cart[id] = cart[index].quantity;
+    }
+  }
+  syncCartLegacy();
   saveCart();
 }
 
-function removeFromCart(id) {
+function removeFromCart(id, event) {
+  if (event) {
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+  const index = cart.findIndex(item => item.id === id);
+  if (index !== -1) {
+    cart.splice(index, 1);
+  }
   delete cart[id];
+  syncCartLegacy();
   saveCart();
   showToast('Removed from bag');
 }
@@ -1635,15 +1769,20 @@ function saveCart() {
   renderGrid();
 }
 
-
 // ── Cart Totals ──────────────────────────────────────────────────────
-
 function cartTotals() {
   let subtotal = 0, count = 0;
-  Object.entries(cart).forEach(([id, qty]) => {
-    const p = products.find(x => x.id === id);
-    if (p) { subtotal += p.price * qty; count += qty; }
-  });
+  if (Array.isArray(cart)) {
+    cart.forEach(item => {
+      subtotal += (item.price || 0) * (item.quantity || 0);
+      count += (item.quantity || 0);
+    });
+  } else {
+    Object.entries(cart).forEach(([id, qty]) => {
+      const p = products.find(x => x.id === id);
+      if (p) { subtotal += p.price * qty; count += qty; }
+    });
+  }
 
   const deliveryFee = 0;
   const discount = 0;
@@ -1662,40 +1801,42 @@ function updateCartUI() {
   $('cartHeaderTotal').textContent = `₹${total}`;
   $('cartSubtitle').textContent    = `${count} item${count !== 1 ? 's' : ''} in your bag`;
 
-  const entries = Object.entries(cart);
-
   // ── Side panel bag ──
   const cartItems  = $('cartItems');
   const cartEmpty  = $('cartEmpty');
   const cartFooter = $('cartFooter');
 
+  // Fix duplicate rendering: Always clear target container first
+  if (cartItems) cartItems.innerHTML = '';
+
   if (count === 0) {
-    cartItems.innerHTML = '';
-    cartEmpty.style.display = '';
-    cartFooter.style.display = 'none';
+    if (cartEmpty) cartEmpty.style.display = '';
+    if (cartFooter) cartFooter.style.display = 'none';
   } else {
-    cartEmpty.style.display = 'none';
-    cartFooter.style.display = '';
-    cartItems.innerHTML = entries.map(([id, qty]) => {
-      const p = products.find(x => x.id === id);
-      if (!p) return '';
-      return `
-        <div class="bag-item">
-          <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
-            <div style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = <span style="color:#10B981;font-weight:700;">₹${p.price * qty}</span></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-            <div class="qty-ctrl" style="border-radius:8px;">
-              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',-1)">−</button>
-              <span class="qty-num" style="font-size:10px;">${qty}</span>
-              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',1)">+</button>
+    if (cartEmpty) cartEmpty.style.display = 'none';
+    if (cartFooter) cartFooter.style.display = '';
+    if (cartItems) {
+      cartItems.innerHTML = cart.map(item => {
+        const p = products.find(x => x.id === item.id) || item;
+        const qty = item.quantity;
+        return `
+          <div class="bag-item">
+            <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+              <div style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = <span style="color:#10B981;font-weight:700;">₹${p.price * qty}</span></div>
             </div>
-            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:13px;padding:2px;">✕</button>
-          </div>
-        </div>`;
-    }).join('');
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              <div class="qty-ctrl" style="border-radius:8px;">
+                <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${item.id}',-1,event)">−</button>
+                <span class="qty-num" style="font-size:10px;">${qty}</span>
+                <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${item.id}',1,event)">+</button>
+              </div>
+              <button onclick="removeFromCart('${item.id}',event)" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:13px;padding:2px;">✕</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
 
     $('cartSubtotalLabel').textContent = `₹${subtotal}`;
     const discRow = $('promoDiscountRow');
@@ -1711,23 +1852,68 @@ function updateCartUI() {
   }
 
   // ── Mobile bag drawer ──
-  updateMobileBag(entries, count, subtotal, discount, total);
+  updateMobileBag(cart, count, subtotal, discount, total);
 }
 
-function updateMobileBag(entries, count, subtotal, discount, total) {
+// Global alias for renderCart with container clearing
+function renderCart() {
+  const container = document.getElementById('cartItems');
+  if (container) container.innerHTML = '';
+  const mContainer = document.getElementById('mBagItems');
+  if (mContainer) mContainer.innerHTML = '';
+  updateCartUI();
+}
+window.renderCart = renderCart;
+
+function updateMobileBag(cartItemsList, count, subtotal, discount, total) {
   const $ = id => document.getElementById(id);
   const mItems   = $('mBagItems');
   const mEmpty   = $('mBagEmpty');
   const mFooter  = $('mBagFooter');
 
+  if (mItems) mItems.innerHTML = '';
+
   if (count === 0) {
-    mItems.innerHTML = '';
-    mEmpty.style.display = 'flex';
-    mFooter.style.display = 'none';
+    if (mEmpty) mEmpty.style.display = 'flex';
+    if (mFooter) mFooter.style.display = 'none';
   } else {
-    mEmpty.style.display = 'none';
-    mFooter.style.display = '';
-    mItems.innerHTML = entries.map(([id, qty]) => {
+    if (mEmpty) mEmpty.style.display = 'none';
+    if (mFooter) mFooter.style.display = '';
+    if (mItems) {
+      mItems.innerHTML = (Array.isArray(cartItemsList) ? cartItemsList : []).map(item => {
+        const p = products.find(x => x.id === item.id) || item;
+        const qty = item.quantity;
+        return `
+          <div class="bag-item">
+            <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+              <div style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = <span style="color:#10B981;font-weight:700;">₹${p.price * qty}</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              <div class="qty-ctrl" style="border-radius:8px;">
+                <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${item.id}',-1,event)">−</button>
+                <span class="qty-num" style="font-size:10px;">${qty}</span>
+                <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${item.id}',1,event)">+</button>
+              </div>
+              <button onclick="removeFromCart('${item.id}',event)" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:13px;padding:2px;">✕</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    if ($('mBagSubtotal')) $('mBagSubtotal').textContent = `₹${subtotal}`;
+    const mDiscRow = $('mPromoDiscountRow');
+    if (mDiscRow) {
+      if (discount > 0) {
+        mDiscRow.style.display = 'flex';
+        $('mBagDiscount').textContent = `-₹${discount}`;
+      } else {
+        mDiscRow.style.display = 'none';
+      }
+    }
+    if ($('mBagTotal')) $('mBagTotal').textContent = `₹${total}`;
+  }
+}
       const p = products.find(x => x.id === id);
       if (!p) return '';
       return `
@@ -1857,10 +2043,18 @@ function handleRequestOtp(e) {
   if (!name)           { showToast('Please enter your full name', 'error'); return; }
   if (phone.length < 10) { showToast('Please enter a valid 10-digit mobile number', 'error'); return; }
 
-  const items = Object.entries(cart).map(([id, qty]) => {
-    const p = products.find(x => x.id === id);
-    return { productId: id, name: p?.name || 'Item', price: p?.price || 0, quantity: qty, subtotal: (p?.price || 0) * qty };
-  });
+  const items = Array.isArray(cart)
+    ? cart.map(item => ({
+        productId: item.id,
+        name: item.name || 'Item',
+        price: item.price || 0,
+        quantity: item.quantity || 1,
+        subtotal: (item.price || 0) * (item.quantity || 1)
+      }))
+    : Object.entries(cart).map(([id, qty]) => {
+        const p = products.find(x => x.id === id);
+        return { productId: id, name: p?.name || 'Item', price: p?.price || 0, quantity: qty, subtotal: (p?.price || 0) * qty };
+      });
 
   currentPendingOrderData = {
     customerName: name,
@@ -1962,6 +2156,11 @@ async function verifyOtpAndPlaceOrder() {
   }
   if (!currentPendingOrderData) return;
 
+  // 4-Digit PIN Generation: Keep confirmation PIN as 4 digits
+  const confirmationPin = Math.floor(1000 + Math.random() * 9000).toString();
+  currentPendingOrderData.confirmationPin = confirmationPin;
+  currentPendingOrderData.pin = confirmationPin;
+
   // Attempt placing order on backend API first
   let order = null;
   try {
@@ -1977,6 +2176,8 @@ async function verifyOtpAndPlaceOrder() {
         order = {
           ...json.data,
           id: json.data.orderId || json.data.id,
+          confirmationPin: json.data.confirmationPin || json.data.pin || confirmationPin,
+          pin: json.data.confirmationPin || json.data.pin || confirmationPin,
         };
         console.log('[FreshCart API] Order placed successfully via Backend API:', order);
       }
@@ -2007,7 +2208,8 @@ async function verifyOtpAndPlaceOrder() {
     } catch (e) {}
   }
 
-  cart = {};
+  cart = [];
+  syncCartLegacy();
   saveCart();
   closeCheckoutOnboarding();
   showToast('🎉 In-Store Pickup Pass Confirmed!');
@@ -2106,9 +2308,62 @@ function renderSvgQrCode(dataString) {
   }
 }
 
-function setPickupStatusUI(status) {
+function setPickupStatusUI(rawStatus) {
   const badge = document.getElementById('passStatus');
   const desc  = document.getElementById('passStatusDesc');
+
+  // Normalize status sequence
+  let status = rawStatus || 'Received';
+  if (status === 'Ready for Pickup') status = 'Ready';
+
+  // Highlight Modal Stepper Nodes: [ Received ] -> [ Packing ] -> [ Ready ] -> [ Completed ]
+  const stages = ['Received', 'Packing', 'Ready', 'Completed'];
+  const currentIndex = stages.indexOf(status);
+
+  stages.forEach((stage, idx) => {
+    const node = document.getElementById(`stepNode-${stage}`);
+    const bannerNode = document.getElementById(`bStep-${stage}`);
+
+    if (node) {
+      if (idx < currentIndex) {
+        // Completed previous stage
+        node.style.background = '#ECFDF5';
+        node.style.color = '#047857';
+        node.style.border = '1px solid #A7F3D0';
+      } else if (idx === currentIndex) {
+        // Active stage
+        node.style.background = '#10B981';
+        node.style.color = '#FFFFFF';
+        node.style.border = '1px solid #059669';
+        node.style.boxShadow = '0 2px 8px rgba(16,185,129,.4)';
+      } else {
+        // Upcoming stage
+        node.style.background = '#F8FAFC';
+        node.style.color = '#94A3B8';
+        node.style.border = '1px solid #E2E8F0';
+        node.style.boxShadow = 'none';
+      }
+    }
+
+    if (bannerNode) {
+      if (idx === currentIndex) {
+        bannerNode.style.background = '#10B981';
+        bannerNode.style.color = '#FFFFFF';
+        bannerNode.style.fontWeight = '800';
+      } else if (idx < currentIndex) {
+        bannerNode.style.background = '#ECFDF5';
+        bannerNode.style.color = '#047857';
+        bannerNode.style.fontWeight = '700';
+      } else {
+        bannerNode.style.background = 'transparent';
+        bannerNode.style.color = '#94A3B8';
+        bannerNode.style.fontWeight = '500';
+      }
+    }
+  });
+
+  const bStepper = document.getElementById('bannerStepper');
+  if (bStepper) bStepper.style.display = 'inline-flex';
 
   if (!badge) return;
 
@@ -2117,31 +2372,54 @@ function setPickupStatusUI(status) {
     badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.4);animation:ping 1.2s infinite;';
     if (desc) desc.textContent = 'Order logged. Zero-G vault team is reviewing your item queue.';
   } else if (status === 'Packing') {
-    badge.textContent = 'Assembling';
+    badge.textContent = 'Packing 📦';
     badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#FBBF24;border:1px solid rgba(245,158,11,.4);animation:ping 1.2s infinite;';
     if (desc) desc.textContent = 'Store staff is assembling your bag for express pickup.';
-  } else if (status === 'Ready for Pickup') {
-    badge.textContent = 'Ready for Pickup';
+  } else if (status === 'Ready') {
+    badge.textContent = 'Ready for Pickup ⚡';
     badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(16,185,129,.2);color:#34D399;border:1px solid rgba(16,185,129,.5);';
     if (desc) desc.textContent = '🎉 Bag packed! Walk up to Bay Counter & verify with your 4-digit PIN.';
   } else if (status === 'Completed') {
-    badge.textContent = 'Collected ✓';
+    badge.textContent = 'Delivered / Completed ✅';
     badge.style.cssText = 'padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:#0F172A;color:#94A3B8;border:1px solid #1E293B;';
     if (desc) desc.textContent = '✓ Order handed over at counter. Thank you for collecting at FreshCart!';
   }
 }
 
-function checkActiveOrder() {
-  if (!activeOrderId || !window.AURA_DB) return;
-  const order = AURA_DB.getOrderById(activeOrderId);
+async function checkActiveOrder() {
+  if (!activeOrderId) return;
+
+  let order = window.AURA_DB ? AURA_DB.getOrderById(activeOrderId) : null;
+
+  // Poll backend for real-time status update from /api/orders/:id
+  try {
+    const apiBase = window.API_BASE_URL || _API || 'http://localhost:5000/api';
+    const res = await fetch(`${apiBase}/orders/${activeOrderId}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && json.data) {
+        order = json.data;
+        // Update local state if different
+        if (window.AURA_DB && AURA_DB.updateOrderStatus) {
+          AURA_DB.updateOrderStatus(activeOrderId, order.status);
+        }
+      }
+    }
+  } catch (err) {
+    // Graceful offline fallback to local order
+  }
+
   if (!order) return;
+
+  let normStatus = order.status || 'Received';
+  if (normStatus === 'Ready for Pickup') normStatus = 'Ready';
 
   const trackBtn = document.getElementById('trackBtn');
   const trackerBar = document.getElementById('trackerBar');
 
   if (trackBtn) {
     trackBtn.style.display = 'flex';
-    document.getElementById('trackBtnText').textContent = `${order.pickupCode || 'PK-000'} · ${order.status}`;
+    document.getElementById('trackBtnText').textContent = `${order.pickupCode || 'PK-000'} · ${normStatus}`;
   }
 
   if (trackerBar) {
@@ -2153,23 +2431,22 @@ function checkActiveOrder() {
     const statusEl = document.getElementById('trackerStatus');
     const dotEl = document.getElementById('trackerDot');
 
-    if (order.status === 'Completed') {
+    if (normStatus === 'Completed') {
       if (dotEl) dotEl.style.background = '#0dc875';
-      if (statusEl) { statusEl.textContent = 'Order Collected at Counter'; statusEl.style.color = '#0dc875'; }
-    } else if (order.status === 'Ready for Pickup') {
+      if (statusEl) { statusEl.textContent = 'Order Delivered / Completed ✅'; statusEl.style.color = '#0dc875'; }
+    } else if (normStatus === 'Ready') {
       if (dotEl) dotEl.style.background = '#0dc875';
-      if (statusEl) { statusEl.textContent = 'Bag Ready at Counter Bay!'; statusEl.style.color = '#0dc875'; }
-      showToast('🎉 Order is READY FOR PICKUP at the counter!');
-    } else if (order.status === 'Packing') {
+      if (statusEl) { statusEl.textContent = 'Bag Ready at Counter Bay! ⚡'; statusEl.style.color = '#0dc875'; }
+    } else if (normStatus === 'Packing') {
       if (dotEl) dotEl.style.background = '#ffc040';
-      if (statusEl) { statusEl.textContent = 'Assembling at Store Vault'; statusEl.style.color = '#ffc040'; }
+      if (statusEl) { statusEl.textContent = 'Assembling at Store Vault 📦'; statusEl.style.color = '#ffc040'; }
     } else {
       if (dotEl) dotEl.style.background = 'var(--emerald)';
-      if (statusEl) { statusEl.textContent = 'Order Logged for Store Pickup'; statusEl.style.color = 'var(--emerald-dark)'; }
+      if (statusEl) { statusEl.textContent = 'Order Received in Store 📥'; statusEl.style.color = 'var(--emerald-dark)'; }
     }
   }
 
-  setPickupStatusUI(order.status || 'Received');
+  setPickupStatusUI(normStatus);
 }
 
 // ── Toast ─────────────────────────────────────────────────────────

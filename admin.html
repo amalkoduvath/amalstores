@@ -13,10 +13,15 @@
   <script src="store.js"></script>
   <style>
     :root {
-      --bg-space: #030308;
-      --glass-panel: rgba(13, 16, 28, 0.82);
-      --border-cyan: rgba(6, 182, 212, 0.28);
-      --border-violet: rgba(139, 92, 246, 0.28);
+      --bg-space: #090d16;
+      --bg-canvas: #0B0F19;
+      --glass-panel: rgba(255, 255, 255, 0.03);
+      --border-cyan: rgba(0, 242, 254, 0.35);
+      --border-violet: rgba(127, 0, 255, 0.35);
+      --neon-cyan-start: #00F2FE;
+      --neon-cyan-end: #4FACFE;
+      --neon-purple-start: #7F00FF;
+      --neon-purple-end: #E100FF;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -27,48 +32,58 @@
       min-height: 100vh;
       overflow-x: hidden;
       padding-bottom: 84px; /* Space for mobile bottom bar */
+      position: relative;
     }
 
-    /* Deep space background with subtle cyber grid */
+    /* Dark anti-gravity canvas background with grid overlay patterns */
     body::before {
       content: '';
       position: fixed; inset: 0; z-index: 0;
+      background-color: var(--bg-space);
       background-image:
-        radial-gradient(circle at 15% 10%, rgba(6, 182, 212, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+        radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(127, 0, 255, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(225, 0, 255, 0.04) 0%, transparent 55%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
       pointer-events: none;
     }
 
     .font-display { font-family: 'Space Grotesk', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* Glassmorphic panels */
+    /* Glassmorphism card elements */
     .glass {
-      background: var(--glass-panel);
-      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .glass-cyan {
-      background: rgba(6, 182, 212, 0.05);
+      background: rgba(0, 242, 254, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border-cyan);
     }
     .glass-violet {
-      background: rgba(139, 92, 246, 0.05);
+      background: rgba(127, 0, 255, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border-violet);
     }
     .glass-emerald {
-      background: rgba(16, 185, 129, 0.05);
+      background: rgba(16, 185, 129, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     /* Neon glow effects */
-    .glow-cyan { box-shadow: 0 0 24px rgba(6, 182, 212, 0.35); }
-    .glow-violet { box-shadow: 0 0 24px rgba(139, 92, 246, 0.35); }
-    .text-glow-cyan { text-shadow: 0 0 14px rgba(6, 182, 212, 0.8), 0 0 28px rgba(6, 182, 212, 0.4); }
-    .text-glow-violet { text-shadow: 0 0 14px rgba(139, 92, 246, 0.8), 0 0 28px rgba(139, 92, 246, 0.4); }
+    .glow-cyan { box-shadow: 0 0 24px rgba(0, 242, 254, 0.4); }
+    .glow-violet { box-shadow: 0 0 24px rgba(127, 0, 255, 0.4); }
+    .text-glow-cyan { text-shadow: 0 0 14px rgba(0, 242, 254, 0.8), 0 0 28px rgba(79, 172, 254, 0.4); }
+    .text-glow-violet { text-shadow: 0 0 14px rgba(127, 0, 255, 0.8), 0 0 28px rgba(225, 0, 255, 0.4); }
 
     /* Levitation & animations */
     @keyframes floatLev {
@@ -80,13 +95,13 @@
     }
     .lev-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 30px -10px rgba(6, 182, 212, 0.25);
+      box-shadow: 0 12px 30px -10px rgba(0, 242, 254, 0.25);
     }
 
     /* Inputs */
     .neon-input {
-      background: rgba(10, 14, 26, 0.8);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+      background: rgba(11, 15, 25, 0.8);
+      border: 1px solid rgba(0, 242, 254, 0.3);
       border-radius: 12px;
       color: #f1f5f9;
       padding: 12px 16px;
@@ -96,18 +111,18 @@
       transition: all 0.2s;
     }
     .neon-input:focus {
-      border-color: #22d3ee;
-      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
-      background: rgba(13, 20, 38, 0.95);
+      border-color: #00F2FE;
+      box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.2);
+      background: rgba(11, 15, 25, 0.95);
     }
     .neon-input::placeholder { color: #64748b; }
-    select.neon-input option { background: #0b0f19; color: #f1f5f9; }
+    select.neon-input option { background: #0B0F19; color: #f1f5f9; }
 
-    /* Buttons */
+    /* Buttons with Neon Cyan & Purple Accents */
     .btn-cyan {
-      background: linear-gradient(135deg, #06b6d4, #0284c7);
-      box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
-      color: #030712;
+      background: linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.35);
+      color: #090d16;
       font-weight: 700;
       border-radius: 12px;
       padding: 12px 20px;
@@ -117,16 +132,16 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      border: none;
     }
     .btn-cyan:hover, .btn-cyan:active {
-      background: linear-gradient(135deg, #22d3ee, #0ea5e9);
-      box-shadow: 0 0 28px rgba(6, 182, 212, 0.6);
+      box-shadow: 0 0 28px rgba(0, 242, 254, 0.6);
       transform: translateY(-2px);
     }
 
     .btn-violet {
-      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-      box-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
+      background: linear-gradient(135deg, #7F00FF 0%, #E100FF 100%);
+      box-shadow: 0 0 20px rgba(127, 0, 255, 0.35);
       color: #ffffff;
       font-weight: 700;
       border-radius: 12px;
@@ -137,10 +152,10 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      border: none;
     }
     .btn-violet:hover, .btn-violet:active {
-      background: linear-gradient(135deg, #a78bfa, #7c3aed);
-      box-shadow: 0 0 28px rgba(139, 92, 246, 0.6);
+      box-shadow: 0 0 28px rgba(225, 0, 255, 0.6);
       transform: translateY(-2px);
     }
 
@@ -445,13 +460,28 @@
             <p class="text-xs text-slate-400">Real-time incoming customer pickup orders</p>
           </div>
 
-          <!-- Order Status Filter Pills -->
-          <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <button onclick="filterOrderStatus('All')" id="ordStatus-All" class="px-3 py-1 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">All</button>
-            <button onclick="filterOrderStatus('Received')" id="ordStatus-Received" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Received</button>
-            <button onclick="filterOrderStatus('Packing')" id="ordStatus-Packing" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Packing</button>
-            <button onclick="filterOrderStatus('Ready for Pickup')" id="ordStatus-Ready" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Ready</button>
-            <button onclick="filterOrderStatus('Completed')" id="ordStatus-Completed" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">Completed</button>
+          <!-- Order Status Filter Pills with dynamic counts -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" id="orderFilterPills">
+            <button onclick="filterOrderStatus('All')" id="ordStatus-All" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 whitespace-nowrap">
+              <span>All</span>
+              <span id="badgeCount-All" class="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">0</span>
+            </button>
+            <button onclick="filterOrderStatus('Received')" id="ordStatus-Received" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1.5 whitespace-nowrap">
+              <span>Received</span>
+              <span id="badgeCount-Received" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-300">0</span>
+            </button>
+            <button onclick="filterOrderStatus('Packing')" id="ordStatus-Packing" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1.5 whitespace-nowrap">
+              <span>Packing</span>
+              <span id="badgeCount-Packing" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-300">0</span>
+            </button>
+            <button onclick="filterOrderStatus('Ready')" id="ordStatus-Ready" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1.5 whitespace-nowrap">
+              <span>Ready</span>
+              <span id="badgeCount-Ready" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-300">0</span>
+            </button>
+            <button onclick="filterOrderStatus('Completed')" id="ordStatus-Completed" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1.5 whitespace-nowrap">
+              <span>Completed</span>
+              <span id="badgeCount-Completed" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-300">0</span>
+            </button>
           </div>
         </div>
 
@@ -460,10 +490,18 @@
           <!-- Populated dynamically via JS -->
         </div>
 
-        <div id="ordersEmpty" class="hidden glass rounded-2xl p-12 text-center text-slate-400">
+        <div id="ordersEmpty" class="hidden glass rounded-2xl p-10 sm:p-12 text-center text-slate-400 border border-slate-800">
           <div class="text-4xl mb-3">📡</div>
-          <p class="font-display font-semibold text-white">No orders in this state</p>
-          <p class="text-xs text-slate-500 mt-1">Listening on real-time broadcast channel...</p>
+          <p id="emptyStateTitle" class="font-display font-semibold text-white text-base">No orders in this state</p>
+          <p id="emptyStateSubtitle" class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">All orders in this stage have been processed or none have been submitted yet.</p>
+          <div class="mt-4 flex items-center justify-center gap-2">
+            <button onclick="loadLiveOrders()" class="btn-cyan text-xs py-1.5 px-3.5 inline-flex items-center gap-1.5">
+              <span>🔄 Refresh Stream</span>
+            </button>
+            <button onclick="filterOrderStatus('All')" class="btn-ghost text-xs py-1.5 px-3">
+              <span>View All Orders</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -478,14 +516,14 @@
               <span class="text-2xl">🔐</span>
             </div>
             <h2 class="font-display font-bold text-2xl text-white">Staff PIN Verification Terminal</h2>
-            <p class="text-xs text-slate-400 mt-1">Enter the customer's 6-digit confirmation PIN to validate & release order</p>
+            <p class="text-xs text-slate-400 mt-1">Enter the customer's 4-digit confirmation PIN to validate & release order</p>
           </div>
 
           <!-- PIN Search & Input Field -->
           <div class="glass-cyan rounded-2xl p-5 mb-5 border-2 border-cyan-500/40">
-            <label class="block text-xs font-mono text-cyan-400 uppercase tracking-widest mb-2 text-center">Customer 6-Digit PIN or Code</label>
+            <label class="block text-xs font-mono text-cyan-400 uppercase tracking-widest mb-2 text-center">Customer 4-Digit PIN or Code</label>
             <div class="flex items-center gap-2">
-              <input type="text" id="pinDirectInput" maxlength="6" placeholder="Enter 6-digit PIN (e.g. 748219)"
+              <input type="text" id="pinDirectInput" maxlength="4" placeholder="Enter 4-digit PIN (e.g. 4829)"
                      class="neon-input text-center font-mono font-bold text-xl sm:text-2xl tracking-[0.2em] text-white py-3"
                      oninput="handleDirectPinInput(this.value)" onkeydown="if(event.key==='Enter') executePinVerification()" />
               <button type="button" onclick="executePinVerification()" class="btn-cyan py-3.5 px-5 font-bold whitespace-nowrap text-sm">
@@ -948,14 +986,14 @@
         });
       }
 
-      // ── Auto-sync: re-fetch orders every 3 seconds, products every 15 seconds ──
+      // ── Auto-sync: re-fetch orders every 10 seconds, products every 15 seconds ──
       setInterval(() => {
         try {
-          if (currentAdminSession) loadOrdersData();
+          if (currentAdminSession) loadLiveOrders();
         } catch (pollErr) {
           console.warn('[Admin] Polling orders error:', pollErr);
         }
-      }, 3000); // orders: every 3 seconds for near-real-time new order alerts
+      }, 10000); // 10s automatic live order polling across devices
 
       setInterval(() => {
         try {
@@ -1280,6 +1318,36 @@
     }
     window.loadOrdersData = loadOrdersData;
 
+    function updateOrderStatusFilterCounts(allOrders) {
+      const counts = {
+        All: allOrders.length,
+        Received: 0,
+        Packing: 0,
+        Ready: 0,
+        Completed: 0
+      };
+
+      allOrders.forEach(o => {
+        let st = o.status;
+        if (st === 'Ready for Pickup') st = 'Ready';
+        if (counts[st] !== undefined) {
+          counts[st]++;
+        }
+      });
+
+      ['All', 'Received', 'Packing', 'Ready', 'Completed'].forEach(st => {
+        const badge = document.getElementById(`badgeCount-${st}`);
+        if (badge) {
+          badge.textContent = counts[st];
+          if (activeOrderStatusFilter === st) {
+            badge.className = 'px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-950/90 text-cyan-300 border border-cyan-500/40 font-bold';
+          } else {
+            badge.className = 'px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-300 font-normal';
+          }
+        }
+      });
+    }
+
     function loadLiveOrders() {
       try {
         // Try fetching from backend API first, then fall back to localStorage
@@ -1287,6 +1355,7 @@
           .then(apiOrders => {
             try {
               const orders = Array.isArray(apiOrders) ? apiOrders : (window.AURA_DB ? AURA_DB.getOrders() : []);
+              cachedApiOrders = orders;
               const active = orders.filter(o => o.status !== 'Completed');
               const completed = orders.filter(o => o.status === 'Completed');
               const revenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
@@ -1306,6 +1375,7 @@
                 mBadge.classList.toggle('hidden', active.length === 0);
               }
 
+              updateOrderStatusFilterCounts(orders);
               renderOrdersFeed(orders);
             } catch (innerErr) {
               console.warn('[Admin Dashboard] Error processing orders payload:', innerErr);
@@ -1314,6 +1384,7 @@
           .catch(err => {
             console.warn('[Admin Dashboard] apiFetchOrders promise rejected:', err);
             const fallback = window.AURA_DB ? AURA_DB.getOrders() : [];
+            updateOrderStatusFilterCounts(fallback);
             renderOrdersFeed(fallback);
           });
       } catch (err) {
@@ -1621,15 +1692,14 @@
     // ── Orders Feed Logic ──────────────────────────────────────────────────
     function filterOrderStatus(status) {
       activeOrderStatusFilter = status;
-      const statuses = ['All', 'Received', 'Packing', 'Ready for Pickup', 'Completed'];
+      const statuses = ['All', 'Received', 'Packing', 'Ready', 'Completed'];
       statuses.forEach(s => {
-        const key = s === 'Ready for Pickup' ? 'Ready' : s;
-        const btn = document.getElementById(`ordStatus-${key}`);
+        const btn = document.getElementById(`ordStatus-${s}`);
         if (!btn) return;
         if (s === status) {
-          btn.className = 'px-3 py-1 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 whitespace-nowrap shadow-sm shadow-cyan-500/10';
         } else {
-          btn.className = 'px-3 py-1 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800';
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1.5 whitespace-nowrap hover:border-slate-700 transition-colors';
         }
       });
       renderOrdersFeed();
@@ -1647,6 +1717,17 @@
       if (orders.length === 0) {
         container.innerHTML = '';
         emptyEl.classList.remove('hidden');
+        const emptyTitle = document.getElementById('emptyStateTitle');
+        const emptySubtitle = document.getElementById('emptyStateSubtitle');
+        if (emptyTitle && emptySubtitle) {
+          if (activeOrderStatusFilter === 'All') {
+            emptyTitle.textContent = 'No orders found';
+            emptySubtitle.textContent = 'No customer orders have been received yet. They will appear here live when placed.';
+          } else {
+            emptyTitle.textContent = `No "${activeOrderStatusFilter}" orders`;
+            emptySubtitle.textContent = `There are currently 0 orders in the ${activeOrderStatusFilter} stage.`;
+          }
+        }
         return;
       }
       emptyEl.classList.add('hidden');
@@ -1664,70 +1745,79 @@
 
         // Target valid MongoDB _id or orderId
         const targetOrderId = o._id || o.orderId || o.id;
+        const currentStatus = o.status;
 
-        if (o.status === 'Received') {
-          statusClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40 animate-pulse';
+        if (currentStatus === 'Received') {
+          statusClass = 'bg-[#00F2FE]/15 text-[#00F2FE] border-[#00F2FE]/40 animate-pulse shadow-sm shadow-[#00F2FE]/20';
           actionBtn = `
-            <button onclick="handleStatusUpdate('${targetOrderId}', 'Packing')" class="btn-cyan text-xs py-2 w-full">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Packing', this)" class="btn-cyan text-xs py-2 w-full font-semibold flex items-center justify-center gap-1.5 transition-all">
               <span>Advance to Packing 📦</span>
             </button>`;
-        } else if (o.status === 'Packing') {
+        } else if (currentStatus === 'Packing') {
           statusClass = 'bg-amber-500/15 text-amber-300 border-amber-500/40 animate-pulse';
           actionBtn = `
-            <button onclick="handleStatusUpdate('${targetOrderId}', 'Ready for Pickup')" class="btn-emerald text-xs py-2 w-full">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Ready', this)" class="btn-cyan text-xs py-2 w-full font-semibold flex items-center justify-center gap-1.5 transition-all">
               <span>Mark Ready for Pickup ⚡</span>
             </button>`;
-        } else if (o.status === 'Ready for Pickup') {
-          statusClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 animate-pulse';
+        } else if (currentStatus === 'Ready' || currentStatus === 'Ready for Pickup') {
+          statusClass = 'bg-[#7F00FF]/25 text-[#E100FF] border-[#E100FF]/50 animate-pulse shadow-sm shadow-[#7F00FF]/25';
           actionBtn = `
-            <button onclick="handleStatusUpdate('${targetOrderId}', 'Completed')" class="btn-violet text-xs py-2 w-full">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Completed', this)" class="btn-violet text-xs py-2 w-full font-semibold flex items-center justify-center gap-1.5 transition-all">
               <span>Confirm Handover & Complete ✓</span>
             </button>`;
+        } else if (currentStatus === 'Completed') {
+          statusClass = 'bg-slate-800 text-slate-400 border-slate-700';
+          actionBtn = `
+            <div class="w-full py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold text-center flex items-center justify-center gap-1.5">
+              <span>Order Delivered / Completed ✅</span>
+            </div>`;
         } else {
           statusClass = 'bg-slate-800 text-slate-400 border-slate-700';
-          actionBtn = `<div class="text-xs text-center text-slate-500 py-1 font-mono">✓ Handed Over to Customer</div>`;
+          actionBtn = `<div class="text-xs text-center text-slate-500 py-1 font-mono">${escapeHtml(currentStatus)}</div>`;
         }
 
         // ── Robust date formatting preventing "undefined · Invalid Date" ──
-        const rawDate = o.createdAt || o.date || o.timestamp || Date.now();
-        const dateObj = new Date(rawDate);
+        const dateObj = new Date(o.createdAt || o.date || Date.now());
         const dateStr = !isNaN(dateObj.getTime())
-          ? dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+          ? dateObj.toLocaleDateString()
           : new Date().toLocaleDateString();
 
         // ── Clean fallback for order ID / reference ──
-        const orderRef = o.orderRef || o.orderId || o.id || (o._id ? String(o._id).slice(-8) : 'ORD-???');
+        const orderRef = o.orderRef || o._id || 'N/A';
         const pickupSlot = o.pickupSlot || o.slot || o.timeSlot || 'Instant Express';
         const pickupCode = o.pickupCode || o.code || 'PK-???';
-        const pinCode = o.pin || o.pickupPin || o.verificationPin || '------';
+        const pinCode = o.confirmationPin || o.pin || o.pickupPin || o.verificationPin || '----';
         const customerName = o.customerName || o.name || 'Cosmic Shopper';
         const customerPhone = o.phone || o.phoneNumber || 'N/A';
         const orderTotal = o.totalAmount !== undefined ? o.totalAmount : (o.total || 0);
 
         return `
-          <div class="glass rounded-2xl p-4 lev-card border border-slate-800 flex flex-col justify-between space-y-3.5">
+          <div class="glass rounded-2xl p-4 lev-card border border-white/10 flex flex-col justify-between space-y-3.5 hover:border-[#00F2FE]/40 transition-all">
             <div>
               <!-- Header info: Pickup Code & PIN -->
-              <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
+              <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-800">
                 <div>
-                  <div class="font-mono font-bold text-xl text-cyan-300 tracking-wider">${escapeHtml(pickupCode)}</div>
-                  <div class="text-[10px] font-mono text-slate-400">${escapeHtml(orderRef)} · ${dateStr}</div>
+                  <div class="font-mono font-bold text-xl text-[#00F2FE] tracking-wider text-glow-cyan">${escapeHtml(pickupCode)}</div>
+                  <div class="text-[11px] font-mono text-slate-400 mt-0.5">${escapeHtml(orderRef)} · ${dateStr}</div>
                 </div>
                 <div class="text-right">
-                  <div class="text-[10px] font-mono text-slate-400 uppercase">CONFIRMATION PIN</div>
-                  <div class="font-mono font-bold text-base text-amber-400 tracking-widest">${escapeHtml(pinCode)}</div>
+                  <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">CONFIRMATION PIN</div>
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 mt-0.5 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-300 font-mono font-bold text-sm tracking-widest shadow-inner">
+                    <span>🔑</span>
+                    <span>${escapeHtml(pinCode)}</span>
+                  </div>
                 </div>
               </div>
 
               <!-- Customer Info -->
-              <div class="grid grid-cols-2 gap-2 text-xs pt-2 text-slate-300">
+              <div class="grid grid-cols-2 gap-2 text-xs pt-2.5 text-slate-300">
                 <div>
                   <span class="text-slate-500 block text-[10px] uppercase font-mono">Customer</span>
-                  <span class="font-semibold text-white">${escapeHtml(customerName)}</span>
+                  <span class="font-semibold text-white truncate block">${escapeHtml(customerName)}</span>
                 </div>
                 <div>
                   <span class="text-slate-500 block text-[10px] uppercase font-mono">Phone</span>
-                  <span>${escapeHtml(customerPhone)}</span>
+                  <span class="text-slate-300">${escapeHtml(customerPhone)}</span>
                 </div>
                 <div class="col-span-2">
                   <span class="text-slate-500 block text-[10px] uppercase font-mono">Pickup Slot</span>
@@ -1757,12 +1847,26 @@
       }).join('');
     }
 
-    function handleStatusUpdate(orderId, nextStatus) {
+    function handleStatusUpdate(orderId, nextStatus, btnElement) {
+      if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.classList.add('opacity-75', 'cursor-not-allowed');
+        btnElement.innerHTML = `
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="animate-spin h-3.5 w-3.5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span>Updating...</span>
+          </span>
+        `;
+      }
+
       // Update locally in AURA_DB if present for instant visual feedback
       if (window.AURA_DB) {
         const updated = AURA_DB.updateOrderStatus(orderId, nextStatus);
         if (updated) {
-          showToast(`Order ${updated.pickupCode || orderId} updated to: ${nextStatus}`, 'success');
+          showToast(`Order ${updated.pickupCode || orderId} advanced to ${nextStatus}`, 'info');
         }
       }
 
@@ -1775,14 +1879,15 @@
       })
       .then(res => {
         if (res.ok) {
-          loadLiveOrders();
+          showToast(`Order marked as ${nextStatus} ✓`, 'success');
         } else {
           console.warn(`[Admin] Backend PATCH status HTTP ${res.status}`);
-          loadLiveOrders();
         }
       })
       .catch(err => {
         console.warn('[Admin] Failed to sync order status to backend:', err);
+      })
+      .finally(() => {
         loadLiveOrders();
       });
     }
@@ -1796,16 +1901,16 @@
       keypadPinValue = val.trim().replace(/\D/g, '');
       const input = document.getElementById('pinDirectInput');
       if (input && input.value !== keypadPinValue) input.value = keypadPinValue;
-      if (keypadPinValue.length === 6) {
+      if (keypadPinValue.length === 4) {
         executePinVerification();
       }
     }
 
     function keypadPress(digit) {
-      if (keypadPinValue.length >= 6) return;
+      if (keypadPinValue.length >= 4) return;
       keypadPinValue += digit;
       updatePinDisplay();
-      if (keypadPinValue.length === 6) {
+      if (keypadPinValue.length === 4) {
         // Auto trigger verification
         executePinVerification();
       }
@@ -1832,15 +1937,37 @@
       const input = document.getElementById('pinDirectInput');
       const pinToVerify = (input ? input.value : keypadPinValue).trim();
       const card = document.getElementById('pinResultCard');
-      const res = AURA_DB.verifyPin(pinToVerify);
 
-      if (!res.success) {
-        showToast(res.message, 'error');
+      if (!pinToVerify) {
+        showToast('Please enter a 4-digit PIN or pickup code', 'error');
+        return;
+      }
+
+      // Check all available orders matching 4-digit PIN against confirmationPin or pin
+      const allOrders = (Array.isArray(cachedApiOrders) && cachedApiOrders.length > 0)
+        ? cachedApiOrders
+        : (window.AURA_DB ? AURA_DB.getOrders() : []);
+
+      const cleanQuery = pinToVerify.toUpperCase();
+      let order = allOrders.find(o => {
+        const orderPin = String(o.confirmationPin || o.pin || '').trim();
+        const code = String(o.pickupCode || '').toUpperCase();
+        const ref = String(o.orderRef || o.orderId || o._id || o.id || '').toUpperCase();
+        return orderPin === pinToVerify || code === cleanQuery || ref === cleanQuery;
+      });
+
+      if (!order && window.AURA_DB) {
+        const res = AURA_DB.verifyPin(pinToVerify);
+        if (res.success) order = res.order;
+      }
+
+      if (!order) {
+        showToast('No order found with this PIN / Code. Please check the customer pass.', 'error');
         card.innerHTML = `
           <div class="text-center py-4 text-rose-400">
             <div class="text-3xl mb-1">❌</div>
-            <div class="font-semibold text-sm">${res.message}</div>
-            <p class="text-xs text-slate-400 mt-1">Please re-check the 6 digits on customer pass</p>
+            <div class="font-semibold text-sm">No Matching Order Found</div>
+            <p class="text-xs text-slate-400 mt-1">Please re-check the 4-digit PIN on the customer pickup pass.</p>
           </div>
         `;
         card.className = 'mt-6 glass rounded-2xl p-6 border-2 border-rose-500/40';
@@ -1848,46 +1975,48 @@
         return;
       }
 
-      const order = res.order;
       const isDone = order.status === 'Completed';
+      const targetOrderId = order._id || order.orderId || order.id;
+      const orderPin = order.confirmationPin || order.pin;
 
       card.className = `mt-6 glass rounded-2xl p-6 border-2 ${isDone ? 'border-slate-600' : 'border-emerald-500/60 glow-cyan'}`;
       card.innerHTML = `
         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
-            <span class="text-xs font-mono text-emerald-400 font-bold">✓ VALID MATCH FOUND</span>
-            <h3 class="font-mono font-bold text-2xl text-white mt-0.5">${order.pickupCode}</h3>
+            <span class="text-xs font-mono text-emerald-400 font-bold">✓ VALID 4-DIGIT PIN MATCH</span>
+            <h3 class="font-mono font-bold text-2xl text-white mt-0.5">${escapeHtml(order.pickupCode || 'PK-???')}</h3>
           </div>
           <div class="text-right">
             <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isDone ? 'bg-slate-700 text-slate-300' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse'}">
-              ${order.status}
+              ${escapeHtml(order.status || 'Received')}
             </span>
           </div>
         </div>
 
         <div class="py-3 text-xs space-y-1.5 text-slate-300">
-          <div><strong class="text-slate-400 font-mono">Customer:</strong> ${escapeHtml(order.customerName)} (${escapeHtml(order.phone || 'No phone')})</div>
-          <div><strong class="text-slate-400 font-mono">Time Slot:</strong> ${escapeHtml(order.pickupSlot)}</div>
-          <div><strong class="text-slate-400 font-mono">Total Paid:</strong> <span class="font-bold text-white text-sm">₹${order.totalAmount}</span></div>
+          <div><strong class="text-slate-400 font-mono">Customer:</strong> ${escapeHtml(order.customerName || 'Shopper')} (${escapeHtml(order.phone || 'No phone')})</div>
+          <div><strong class="text-slate-400 font-mono">PIN:</strong> <span class="font-mono font-bold text-amber-400 tracking-wider">🔑 ${escapeHtml(orderPin || '----')}</span></div>
+          <div><strong class="text-slate-400 font-mono">Time Slot:</strong> ${escapeHtml(order.pickupSlot || 'Instant Express')}</div>
+          <div><strong class="text-slate-400 font-mono">Total Paid:</strong> <span class="font-bold text-white text-sm">₹${order.totalAmount || order.total || 0}</span></div>
           <div class="pt-1 text-[11px] text-slate-400">
-            <strong>Items:</strong> ${(order.items || []).map(i => `${i.name} (x${i.quantity})`).join(', ')}
+            <strong>Items:</strong> ${(order.items || []).map(i => `${escapeHtml(i.name)} (x${i.quantity})`).join(', ')}
           </div>
         </div>
 
         <div class="pt-3 border-t border-slate-800">
           ${isDone ? `
             <div class="text-xs text-center text-slate-400 font-mono py-2 bg-slate-900/50 rounded-xl">
-              ✓ Order was already handed over at ${new Date(order.completedAt || order.timestamp).toLocaleTimeString()}
+              ✓ Order was already handed over and completed
             </div>
           ` : `
-            <button onclick="confirmHandoverByPin('${order.pin}')" class="btn-emerald w-full py-3 text-sm font-bold">
+            <button onclick="handleStatusUpdate('${targetOrderId}', 'Completed', this)" class="btn-emerald w-full py-3 text-sm font-bold flex items-center justify-center gap-1.5">
               <span>🎉 Confirm Handover & Complete Order</span>
             </button>
           `}
         </div>
       `;
       card.classList.remove('hidden');
-      showToast(`✓ Order ${order.pickupCode} validated!`, 'success');
+      showToast(`✓ Order ${order.pickupCode} validated with 4-digit PIN!`, 'success');
     }
 
     function confirmHandoverByPin(pin) {

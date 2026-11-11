@@ -32,6 +32,11 @@ const orderSchema = new mongoose.Schema(
       match: [/^\d{4}$/, 'Pickup PIN must be exactly 4 digits'],
       index: true,
     },
+    confirmationPin: {
+      type: String,
+      default: function() { return this.pin; },
+      index: true,
+    },
     customerName: {
       type: String,
       required: [true, 'Customer name is required'],
@@ -66,7 +71,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Received', 'Packing', 'Ready for Pickup', 'Completed', 'Cancelled'],
+      enum: ['Received', 'Packing', 'Ready for Pickup', 'Ready', 'Completed', 'Cancelled'],
       default: 'Received',
       index: true,
     },

@@ -441,12 +441,14 @@ const AURA_DB = (() => {
     placeOrder(orderData) {
       const orders = this.getOrders();
       const pickupCode = 'PK-' + Math.floor(100 + Math.random() * 900);
-      const pin = orderData.pin || String(Math.floor(1000 + Math.random() * 9000)); // 4-digit secret PIN
+      const confirmationPin = orderData.confirmationPin || orderData.pin || Math.floor(1000 + Math.random() * 9000).toString();
+      const pin = confirmationPin;
 
       const newOrder = {
         id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
         pickupCode,
-        pin, // 6-digit verification PIN for counter handover
+        pin, // 4-digit verification PIN for counter handover
+        confirmationPin,
         timestamp: new Date().toISOString(),
         customerName:   orderData.customerName   || 'Cosmic Shopper',
         phone:          orderData.phone          || '',
@@ -557,14 +559,19 @@ const AURA_DB = (() => {
 
     /**
      * Staff PIN verification tool
-     * Finds active order matching 6-digit PIN or pickup code
+     * Finds active order matching 4-digit PIN or pickup code
      */
     verifyPin(inputPin) {
       const query = String(inputPin || '').trim().replace(/\s+/g, '');
       if (!query || query.length < 3) return { success: false, message: 'Please enter a valid PIN or Pickup code.' };
 
       const orders = this.getOrders();
-      const match = orders.find(o => o.pin === query || o.pickupCode.toUpperCase() === query.toUpperCase() || o.id === query);
+      const match = orders.find(o => {
+        const orderPin = String(o.confirmationPin || o.pin || '').trim();
+        const code = String(o.pickupCode || '').toUpperCase();
+        const id = String(o.id || o.orderId || o._id || '').toUpperCase();
+        return orderPin === query || code === query.toUpperCase() || id === query.toUpperCase();
+      });
       if (!match) {
         return { success: false, message: 'No order found with this PIN / Code. Please check the customer pass.' };
       }
