@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AURA COMMAND — Mobile Zero-G Admin</title>
+  <link rel="icon" href="data:," />
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1348,6 +1349,10 @@
       });
     }
 
+    // Track last poll hash to avoid redundant full re-renders
+    let _lastOrdersHash = '';
+    let _pollRafPending = false;
+
     function loadLiveOrders() {
       try {
         // Try fetching from backend API first, then fall back to localStorage
@@ -1355,6 +1360,12 @@
           .then(apiOrders => {
             try {
               const orders = Array.isArray(apiOrders) ? apiOrders : (window.AURA_DB ? AURA_DB.getOrders() : []);
+
+              // Quick hash to detect if data actually changed
+              const hash = orders.map(o => (o._id || o.id) + ':' + o.status).join('|');
+              if (hash === _lastOrdersHash) return; // nothing changed, skip re-render
+              _lastOrdersHash = hash;
+
               cachedApiOrders = orders;
               const active = orders.filter(o => o.status !== 'Completed');
               const completed = orders.filter(o => o.status === 'Completed');
@@ -1375,8 +1386,15 @@
                 mBadge.classList.toggle('hidden', active.length === 0);
               }
 
-              updateOrderStatusFilterCounts(orders);
-              renderOrdersFeed(orders);
+              // Batch DOM write into a rAF so it doesn't jank mid-scroll
+              if (!_pollRafPending) {
+                _pollRafPending = true;
+                requestAnimationFrame(() => {
+                  _pollRafPending = false;
+                  updateOrderStatusFilterCounts(orders);
+                  renderOrdersFeed(orders);
+                });
+              }
             } catch (innerErr) {
               console.warn('[Admin Dashboard] Error processing orders payload:', innerErr);
             }
@@ -1763,7 +1781,7 @@
           statusClass = 'bg-[#7F00FF]/25 text-[#E100FF] border-[#E100FF]/50 animate-pulse shadow-sm shadow-[#7F00FF]/25';
           actionBtn = `
             <button onclick="handleStatusUpdate('${targetOrderId}', 'Completed', this)" class="btn-violet text-xs py-2 w-full font-semibold flex items-center justify-center gap-1.5 transition-all">
-              <span>Confirm Handover & Complete ✓</span>
+              <span>Quick Complete ⚡</span>
             </button>`;
         } else if (currentStatus === 'Completed') {
           statusClass = 'bg-slate-800 text-slate-400 border-slate-700';
@@ -1848,46 +1866,55 @@
     }
 
     function handleStatusUpdate(orderId, nextStatus, btnElement) {
+      // Capture original button content so we can restore it on failure
+      let originalBtnHTML = '';
       if (btnElement) {
+        originalBtnHTML = btnElement.innerHTML;
         btnElement.disabled = true;
         btnElement.classList.add('opacity-75', 'cursor-not-allowed');
-        btnElement.innerHTML = `
-          <span class="inline-flex items-center gap-1.5">
-            <svg class="animate-spin h-3.5 w-3.5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-            </svg>
-            <span>Updating...</span>
-          </span>
-        `;
+        btnElement.innerHTML = '<span class="inline-flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg><span>Updating…</span></span>';
       }
 
-      // Update locally in AURA_DB if present for instant visual feedback
+      // Optimistic local update for instant visual feedback
       if (window.AURA_DB) {
-        const updated = AURA_DB.updateOrderStatus(orderId, nextStatus);
-        if (updated) {
-          showToast(`Order ${updated.pickupCode || orderId} advanced to ${nextStatus}`, 'info');
-        }
+        try { AURA_DB.updateOrderStatus(orderId, nextStatus); } catch (_) {}
       }
 
-      // Sync to backend via PATCH /api/orders/${orderId} and refresh live orders
+      // Race the fetch against a 6-second timeout so the button never freezes
       const apiBase = window.API_BASE_URL || 'http://localhost:5000/api';
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+
       fetch(`${apiBase}/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
+        body: JSON.stringify({ status: nextStatus }),
+        signal: controller.signal
       })
       .then(res => {
+        clearTimeout(timeout);
         if (res.ok) {
-          showToast(`Order marked as ${nextStatus} ✓`, 'success');
+          showToast(`${nextStatus} ✓`, 'success');
         } else {
-          console.warn(`[Admin] Backend PATCH status HTTP ${res.status}`);
+          showToast(`Sync issue (HTTP ${res.status}) – local state updated`, 'info');
         }
       })
       .catch(err => {
-        console.warn('[Admin] Failed to sync order status to backend:', err);
+        clearTimeout(timeout);
+        if (err.name === 'AbortError') {
+          showToast('Request timed out – status saved locally', 'info');
+        } else {
+          console.warn('[Admin] Backend PATCH failed:', err);
+          showToast('Offline – status saved locally', 'info');
+        }
       })
       .finally(() => {
+        // Always reset button immediately, then refresh feed
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.classList.remove('opacity-75', 'cursor-not-allowed');
+          btnElement.innerHTML = originalBtnHTML;
+        }
         loadLiveOrders();
       });
     }

@@ -127,37 +127,52 @@ async function apiToggleStock(id, newStockStatus) {
 
 // ── Action Buttons Order Status Handler ──────────────────────────────
 async function handleStatusUpdate(orderId, newStatus, btnElement) {
+  let originalBtnHTML = '';
   if (btnElement) {
+    originalBtnHTML = btnElement.innerHTML;
     btnElement.disabled = true;
     btnElement.classList.add('opacity-75', 'cursor-not-allowed');
-    btnElement.innerHTML = '<span>Updating...</span>';
+    btnElement.innerHTML = '<span>Updating…</span>';
   }
   try {
     const apiBase = window.API_BASE_URL || API_BASE_URL;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
     const res = await fetch(`${apiBase}/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
+
     if (res.ok) {
       if (typeof window.showToast === 'function') {
-        window.showToast(`Order marked as ${newStatus} ✓`, 'success');
+        window.showToast(`${newStatus} ✓`, 'success');
       }
-      if (typeof window.loadLiveOrders === 'function') {
-        window.loadLiveOrders();
-      } else if (typeof window.loadOrdersData === 'function') {
-        window.loadOrdersData();
-      }
-      return true;
     } else {
       console.warn(`[Admin API] PATCH /api/orders/${orderId} responded with status:`, res.status);
-      if (typeof window.loadLiveOrders === 'function') window.loadLiveOrders();
     }
   } catch (err) {
-    console.warn('[Admin API] Failed to update order status on backend:', err.message);
-    if (typeof window.loadLiveOrders === 'function') window.loadLiveOrders();
+    if (err.name === 'AbortError') {
+      console.warn('[Admin API] PATCH request timed out');
+    } else {
+      console.warn('[Admin API] Failed to update order status on backend:', err.message);
+    }
+  } finally {
+    // Always reset button state – never leave it stuck on "Updating…"
+    if (btnElement) {
+      btnElement.disabled = false;
+      btnElement.classList.remove('opacity-75', 'cursor-not-allowed');
+      btnElement.innerHTML = originalBtnHTML;
+    }
+    if (typeof window.loadLiveOrders === 'function') {
+      window.loadLiveOrders();
+    } else if (typeof window.loadOrdersData === 'function') {
+      window.loadOrdersData();
+    }
   }
-  return false;
 }
 
 // ── Admin PIN Verification Helper ────────────────────────────────────

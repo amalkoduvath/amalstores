@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FreshCart | Clean Light Anti-Gravity Gourmet</title>
+  <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1912,38 +1913,6 @@ function updateMobileBag(cartItemsList, count, subtotal, discount, total) {
       }
     }
     if ($('mBagTotal')) $('mBagTotal').textContent = `₹${total}`;
-  }
-}
-      const p = products.find(x => x.id === id);
-      if (!p) return '';
-      return `
-        <div class="bag-item">
-          <img src="${p.image || IMG_FALLBACK}" onerror="this.src='${IMG_FALLBACK}'" alt="${escapeHtml(p.name)}"/>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
-            <div style="font-size:11px;color:#64748B;font-family:'JetBrains Mono',monospace;margin-top:2px;">₹${p.price} × ${qty} = <span style="color:#10B981;font-weight:700;">₹${p.price * qty}</span></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-            <div class="qty-ctrl" style="border-radius:8px;">
-              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',-1)">−</button>
-              <span class="qty-num" style="font-size:10px;">${qty}</span>
-              <button class="qty-btn" style="width:20px;height:20px;border-radius:5px;" onclick="changeQty('${id}',1)">+</button>
-            </div>
-            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:13px;padding:2px;">✕</button>
-          </div>
-        </div>`;
-    }).join('');
-    $('mBagSubtotal').textContent = `₹${subtotal}`;
-    const mDiscRow = $('mPromoDiscountRow');
-    if (mDiscRow) {
-      if (discount > 0) {
-        mDiscRow.style.display = 'flex';
-        $('mBagDiscount').textContent = `-₹${discount}`;
-      } else {
-        mDiscRow.style.display = 'none';
-      }
-    }
-    $('mBagTotal').textContent    = `₹${total}`;
   }
 }
 
